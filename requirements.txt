@@ -1,0 +1,19 @@
+aiogram==3.17.0
+python-dotenv
+imblearn
+scikit-learn
+langdetect
+pandas
+numpy
+regex
+emoji
+scipy
+nltk
+torch --index-url https://download.pytorch.org/whl/cu118
+torchvision --index-url https://download.pytorch.org/whl/cu118
+torchaudio --index-url https://download.pytorch.org/whl/cu118
+transformers[torch]
+datasets
+torch
+requests
+openai
