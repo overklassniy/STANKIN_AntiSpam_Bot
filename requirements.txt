@@ -17,3 +17,5 @@ datasets
 torch
 requests
 openai
+waitress
+flask
