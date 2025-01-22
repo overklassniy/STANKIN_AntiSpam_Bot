@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="stylesheet" href="{{ main_css_path }}">
+    <link rel="stylesheet" href="{{ login_css_path }}">
+</head>
+<body>
+<img class="background" src="{{ background_path }}" alt="Фон">
+<section class="container">
+    <div class="login-container">
+        <div class="form-container">
+            <h1 class="opacity" draggable="false">{{ header_text }}</h1>
+            <form action="/login/failed" method="POST">
+                <input type="text" id="username" name="username" placeholder="{{ username_placeholder_text }}" required/>
+                <input type="password" id="password" name="password" placeholder="{{ password_placeholder_text }}" required/>
+                <button type="submit" class="opacity">{{ submit_login_button_text }}</button>
+            </form>
+        </div>
+    </div>
+</section>
+</body>
+</html>

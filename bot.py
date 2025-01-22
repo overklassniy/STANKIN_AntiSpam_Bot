@@ -86,7 +86,6 @@ async def handle_message(message: types.Message) -> None:
         message_text = message.text
         if not message_text:
             message_text = message.caption
-
         sent_by_admin = int(author_chat_member.status in ["administrator", "creator", "left"])
         if testing:
             sent_by_admin = 0
