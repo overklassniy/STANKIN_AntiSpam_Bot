@@ -1,0 +1,27 @@
+@font-face {
+    font-family: "ALS Sirius Regular";
+    src: url("/static/fonts/ALS_Sirius_Regular.otf");
+}
+
+@font-face {
+    font-family: "ALS Sirius Bold";
+    src: url("/static/fonts/ALS_Sirius_Bold.otf");
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: "ALS Sirius Regular";
+}
+
+.background {
+    position: fixed;
+    top: 93%;
+    left: 33.33%;
+    width: 255vh;
+    transform: translate(-45%, -50%);
+    pointer-events: none;
+}

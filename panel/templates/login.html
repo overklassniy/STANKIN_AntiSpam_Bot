@@ -11,10 +11,24 @@
 <section class="container">
     <div class="login-container">
         <div class="form-container">
-            <h1 class="opacity" draggable="false">{{ header_text }}</h1>
-            <form action="/login/failed" method="POST">
+            <h1 id="welcome_header" class="opacity" draggable="false">{{ header_text }}</h1>
+            {% with messages = get_flashed_messages() %}
+            {% if messages %}
+            <div class="notification">
+                {{ messages[0] }}
+            </div>
+            {% endif %}
+            {% endwith %}
+            <form action="/login" method="POST" autocomplete="off">
                 <input type="text" id="username" name="username" placeholder="{{ username_placeholder_text }}" required/>
                 <input type="password" id="password" name="password" placeholder="{{ password_placeholder_text }}" required/>
+                <div class="checkbox-wrapper">
+                    <div class="check">
+                        <input id="check-remember" type="checkbox" name="remember">
+                        <label for="check-remember"></label>
+                    </div>
+                    <span class="checkbox-label">{{ remember_me_text }}</span>
+                </div>
                 <button type="submit" class="opacity">{{ submit_login_button_text }}</button>
             </form>
         </div>
