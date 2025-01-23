@@ -15,6 +15,9 @@ html, body {
     height: 100%;
     overflow: hidden;
     font-family: "ALS Sirius Regular";
+    --text_color: #333;
+    --second_color: #646464;
+    color: var(--text_color)
 }
 
 .background {
@@ -24,4 +27,38 @@ html, body {
     width: 255vh;
     transform: translate(-45%, -50%);
     pointer-events: none;
+}
+
+.url {
+    outline-style: none;
+    color: var(--text_color);
+    text-decoration: none;
+}
+
+.animate {
+    transition: 0.3s;
+}
+
+.notification {
+    background-color: #FFFACD;
+    padding: 1rem;
+    border-radius: 5px;
+}
+
+.noselect {
+  -webkit-touch-callout: none;
+    -webkit-user-select: none;
+     -khtml-user-select: none;
+       -moz-user-select: none;
+        -ms-user-select: none;
+            user-select: none;
+}
+
+.secolor {
+    color: var(--second_color);
+}
+
+.opacity {
+    opacity: 0.6;
+    user-select: none;
 }

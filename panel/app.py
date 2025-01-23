@@ -3,7 +3,7 @@ import sys
 from datetime import timedelta
 
 from dotenv import load_dotenv
-from flask import Flask, session
+from flask import Flask, session, redirect, url_for
 from flask_login import LoginManager
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash
@@ -16,10 +16,14 @@ load_dotenv()
 
 db = SQLAlchemy()
 
-# Пути к статическим ресурсам
+# Пути к статическим ресурсам / Переменные
+icon_path = '/static/images/stankin-logo.svg'
 background_path = '/static/images/stankin_max.svg'
+
 als_font_path = '/static/font/cunia.otf'
 als_bold_font_path = '/static/font/FuturaRoundBold.ttf'
+
+title = 'СТАНКИН Анти-Спам'
 
 
 def create_app():
@@ -58,14 +62,14 @@ def create_app():
     def init_admin():
         # Добавляем пользователя "admin", если он ещё не существует
         if not User.query.filter_by(name='admin').first():
-            db.session.add(User(name='admin', password=generate_password_hash(os.getenv('ADMIN_PASSWORD'), method='scrypt')))
+            db.session.add(User(name='admin', password=generate_password_hash(os.getenv('ADMIN_PASSWORD'), method='scrypt'), can_configure=True))
             db.session.commit()
             print("Пользователь 'admin' добавлен.")
 
     # Настройка Flask-Login
     login_manager = LoginManager()
     login_manager.login_view = 'auth.login'
-    login_manager.login_message = 'Пожалуйста, войдите в систему, чтобы получить доступ к этой странице.'
+    login_manager.login_message = '<p id="login_message">Пожалуйста, войдите в систему, чтобы получить доступ к панели управления анти&#8209;спам бота.</p>'
     login_manager.init_app(app)
 
     @login_manager.user_loader

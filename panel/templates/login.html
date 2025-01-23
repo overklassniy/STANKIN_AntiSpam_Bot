@@ -2,7 +2,12 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <link rel="icon" href="{{ icon_path }}">
+    <meta property="og:title" content="{{ og_title }}">
+    <meta property="og:description" content="{{ og_description }}">
+    <meta property="og:image" content="{{ icon_path }}">
+    <meta name="theme-color" content="#6491F0">
+    <title>{{ title }}</title>
     <link rel="stylesheet" href="{{ main_css_path }}">
     <link rel="stylesheet" href="{{ login_css_path }}">
 </head>
@@ -11,11 +16,11 @@
 <section class="container">
     <div class="login-container">
         <div class="form-container">
-            <h1 id="welcome_header" class="opacity" draggable="false">{{ header_text }}</h1>
+            <h1 id="welcome_header" class="secolor noselect" draggable="false">{{ header_text }}</h1>
             {% with messages = get_flashed_messages() %}
             {% if messages %}
             <div class="notification">
-                {{ messages[0] }}
+                {{ messages[0] | safe }}
             </div>
             {% endif %}
             {% endwith %}
@@ -27,9 +32,10 @@
                         <input id="check-remember" type="checkbox" name="remember">
                         <label for="check-remember"></label>
                     </div>
-                    <span class="checkbox-label">{{ remember_me_text }}</span>
+                    <span class="checkbox-label noselect">{{ remember_me_text }}</span>
                 </div>
-                <button type="submit" class="opacity">{{ submit_login_button_text }}</button>
+                <button type="submit" class="secolor noselect">{{ submit_login_button_text }}</button>
+                <p class="login_faq"><a class="url animate noselect" href="/faq">{{ login_faq | safe }}</a></p>
             </form>
         </div>
     </div>
