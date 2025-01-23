@@ -19,3 +19,5 @@ requests
 openai
 waitress
 flask
+flask-sqlalchemy
+flask-login
