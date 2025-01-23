@@ -1,36 +1,45 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
-from flask_login import login_user, login_required, logout_user
+from flask_login import login_user, login_required, logout_user, current_user
 from werkzeug.security import check_password_hash
 
-from panel.app import background_path
-from panel.main import main_css_path
+from panel.app import background_path, icon_path, title
 from panel.db_models import User
+from panel.main import main_css_path
 
 auth_bp = Blueprint('auth', __name__)
 
 # Пути к статическим ресурсам
 login_css_path = '/static/styles/login.css'
 
+login_title = title + ': авторизация'
+
 
 @auth_bp.route('/login')
 def login():
+    og_description = 'Вход в систему'
     header_text = 'Добро пожаловать!'
     username_placeholder_text = 'Имя пользователя'
     password_placeholder_text = 'Пароль'
     submit_login_button_text = 'Войти'
     remember_me_text = 'Запомните меня!'
-
+    login_faq = 'Как получить доступ к панели управления анти&#8209;спам ботом?'
     return render_template(
         'login.html',
         main_css_path=main_css_path,
         login_css_path=login_css_path,
+
+        icon_path=icon_path,
         background_path=background_path,
 
+        og_title=title,
+        og_description=og_description,
+        title=login_title,
         header_text=header_text,
         username_placeholder_text=username_placeholder_text,
         password_placeholder_text=password_placeholder_text,
         submit_login_button_text=submit_login_button_text,
-        remember_me_text=remember_me_text
+        remember_me_text=remember_me_text,
+        login_faq=login_faq
     )
 
 
@@ -43,8 +52,11 @@ def login_post():
     user = User.query.filter_by(name=username).first()
 
     if not user or not check_password_hash(user.password, password):
-        flash('Пожалуйста, проверьте свои данные для входа в систему и повторите попытку.')
+        flash('<p id="login_message">Пожалуйста, проверьте свои данные для входа в систему и повторите попытку.</p>')
         return redirect(url_for('auth.login'))
+
+    if current_user.is_authenticated:
+        logout_user()
 
     login_user(user, remember=remember)
 
