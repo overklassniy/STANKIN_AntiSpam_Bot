@@ -17,6 +17,8 @@ load_dotenv()
 db = SQLAlchemy()
 
 # Пути к статическим ресурсам / Переменные
+root_css_path = '/static/styles/root.css'
+
 icon_path = '/static/images/stankin-logo.svg'
 background_path = '/static/images/stankin_max.svg'
 
@@ -64,7 +66,7 @@ def create_app():
         if not User.query.filter_by(name='admin').first():
             db.session.add(User(name='admin', password=generate_password_hash(os.getenv('ADMIN_PASSWORD'), method='scrypt'), can_configure=True))
             db.session.commit()
-            print("Пользователь 'admin' добавлен.")
+            print('Пользователь "admin" добавлен.')
 
     # Настройка Flask-Login
     login_manager = LoginManager()
