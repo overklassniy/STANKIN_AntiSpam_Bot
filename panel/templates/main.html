@@ -2,11 +2,59 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <link rel="icon" href="{{ icon_path }}">
+    <meta property="og:title" content="{{ og_title }}">
+    <meta property="og:description" content="{{ og_description }}">
+    <meta property="og:image" content="{{ icon_path }}">
+    <meta name="theme-color" content="#6491F0">
+    <title>{{ title }}</title>
+    <link rel="stylesheet" href="{{ root_css_path }}">
+    <link rel="stylesheet" href="{{ main_css_path }}">
+    <script type="text/javascript" src="{{ hamburger_js_path }}"></script>
 </head>
 <body>
-<h1 class="title">
-    Welcome, {{ name }}!
-</h1>
+<img class="background" src="{{ background_path }}" alt="Фон">
+<header>
+    <nav>
+        <a class="logo animate" href="/">{{ title }}</a>
+        <div class="hamburger noselect">
+            ☰
+        </div>
+        <div class="main-menu">
+            <div class="left-menu">
+                <a class="animate" href="/about">{{ about_text }}</a>
+                <a class="animate" href="/spam">{{ detected_spam_text }}</a>
+                <a class="animate" href="/settings">{{ settings_text }}</a>
+            </div>
+            <div class="right-menu">
+                <a class="animate" href="/logout">{{ logout_text }}</a>
+            </div>
+        </div>
+        <div class="dropdown-menu">
+            <a class="animate" href="/about">{{ about_text }}</a>
+            <a class="animate" href="/spam">{{ detected_spam_text }}</a>
+            <a class="animate" href="/settings">{{ settings_text }}</a>
+            <a class="animate" href="/logout">{{ logout_text }}</a>
+        </div>
+    </nav>
+</header>
+
+<div class="container">
+    <h1 id="table_header">{{ detected_spam_text_table }}</h1>
+    <table>
+        <thead>
+        <tr>
+            <th>{{ date_text }}</th>
+            <th>{{ id_text }}</th>
+            <th>{{ username_text }}</th>
+            <th>{{ spam_text }}</th>
+            <th>{{ probability_text }}</th>
+        </tr>
+        </thead>
+        <tbody>
+        {{ rows | safe }}
+        </tbody>
+    </table>
+</div>
 </body>
 </html>
