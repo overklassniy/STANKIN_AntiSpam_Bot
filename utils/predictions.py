@@ -25,12 +25,13 @@ load_dotenv()
 client = OpenAI()
 
 
-def bert_predict(message: str) -> tuple[int, list[float]]:
+def bert_predict(message: str, threshold: float = 0.5) -> tuple[int, list[float]]:
     """
     Функция для предсказания с помощью модели BERT.
 
     Параметры:
-        message: (str) - входное сообщение для анализа
+        message (str): – входное сообщение для анализа
+        threshold (float): – пороговое значение для предсказания класса
 
     Возвращает:
         tuple[int, list[float]] - предсказание (0 или 1) и список вероятностей
@@ -45,6 +46,9 @@ def bert_predict(message: str) -> tuple[int, list[float]]:
     elif prediction == 0:
         probabilities = [score, 1 - score]
 
+    if max(probabilities) < threshold:
+        prediction = abs(prediction - 1)
+
     return prediction, probabilities
 
 
@@ -53,7 +57,7 @@ def predict_message(text: str, vectorizer, scaler, model) -> tuple[int, list[flo
     Предсказывает метку и вероятности для текста с использованием модели машинного обучения.
 
     Параметры:
-        text: (str) - входной текст для анализа
+        text (str): - входной текст для анализа
         vectorizer: - векторизатор для преобразования текста
         scaler: - масштабатор числовых признаков
         model: - модель машинного обучения
@@ -89,7 +93,7 @@ def get_predictions(text: str) -> str:
     Генерирует предсказания для текста, используя загруженные модели.
 
     Параметры:
-        text: (str) - входной текст для анализа
+        text (str): - входной текст для анализа
 
     Возвращает:
         str - предсказания в формате JSON
@@ -133,7 +137,7 @@ async def chatgpt_predict(text: str) -> int:
     Проверяет текст на наличие спама с использованием модели GPT.
 
     Параметры:
-        text: (str) - текст сообщения для проверки
+        text (str): - текст сообщения для проверки
 
     Возвращает:
         int: 1, если текст является спамом, иначе 0. Возвращает 500 в случае ошибки.
