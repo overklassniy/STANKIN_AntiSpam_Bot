@@ -2,6 +2,8 @@ from typing import Union
 
 import requests
 
+from utils.basic import logger
+
 
 def get_cas(user_id: int) -> Union[int, dict]:
     """
@@ -19,7 +21,8 @@ def get_cas(user_id: int) -> Union[int, dict]:
         response.raise_for_status()  # Проверяем наличие ошибок HTTP
         return int(response.json()['ok'])
     except requests.exceptions.RequestException as e:
-        return {"error": str(e)}
+        logger.error(f"Ошибка при проверке CAS: {e}")
+        return 0
 
 
 def get_lols(account_id: int) -> Union[int, dict]:
@@ -38,4 +41,5 @@ def get_lols(account_id: int) -> Union[int, dict]:
         response.raise_for_status()  # Проверяем наличие ошибок HTTP
         return int(response.json()['banned'])
     except requests.exceptions.RequestException as e:
-        return {"error": str(e)}
+        logger.error(f"Ошибка при проверке LOLS: {e}")
+        return 0

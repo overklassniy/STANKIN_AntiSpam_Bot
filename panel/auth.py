@@ -2,9 +2,8 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_user, login_required, logout_user, current_user
 from werkzeug.security import check_password_hash
 
-from panel.app import background_path, icon_path, title
+from panel.app import background_path, icon_path, title, root_css_path
 from panel.db_models import User
-from panel.main import main_css_path
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -25,7 +24,7 @@ def login():
     login_faq = 'Как получить доступ к панели управления анти&#8209;спам ботом?'
     return render_template(
         'login.html',
-        main_css_path=main_css_path,
+        root_css_path=root_css_path,
         login_css_path=login_css_path,
 
         icon_path=icon_path,

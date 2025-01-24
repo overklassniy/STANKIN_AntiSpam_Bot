@@ -50,6 +50,29 @@ def setup_logger() -> logging.Logger:
 logger = setup_logger()
 
 
+def plural_form(number: int, singular: str, plural_genitive: str, plural_nominative: str) -> str:
+    """
+    Возвращает форму слова в зависимости от числа перед ним.
+
+    Параметры:
+        number (int): Число перед словом.
+        singular (str): Форма слова при числе, заканчивающемся на 1.
+        plural_genitive (str): Форма слова при числе, заканчивающемся на 2-4 или на 11-19.
+        plural_nominative (str): Форма слова при числе, заканчивающемся на 2-4, кроме случаев, когда число заканчивается на 12-14.
+
+    Возвращает:
+        str: Правильная форма слова в зависимости от числа.
+    """
+    if 11 <= number % 100 <= 19:
+        return plural_genitive
+    elif number % 10 == 1:
+        return singular
+    elif 2 <= number % 10 <= 4:
+        return plural_nominative
+    else:
+        return plural_genitive
+
+
 # Функции для работы с файлами JSON
 def load_json_file(file_path: str, default_value: Union[dict, list]) -> Union[dict, list]:
     """
@@ -86,6 +109,19 @@ def save_json_file(file_path: str, data: Union[dict, list]) -> None:
     # Сохраняем данные в JSON файл
     with open(file_path, 'w') as f:
         json.dump(data, f)
+
+
+def update_detected_spam_json_file(file_path: str, data: Union[dict, list]) -> None:
+    """
+    Добавляет данные в JSON файл.
+
+    Параметры:
+        file_path (str): Путь к JSON файлу.
+        data (dict | list): Данные для добавления.
+    """
+    json_dict = load_json_file(file_path, [])
+    json_dict.append(data)
+    save_json_file(file_path, json_dict)
 
 
 def get_pkl_files(directory) -> Union[list, dict]:

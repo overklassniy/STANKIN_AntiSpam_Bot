@@ -1,0 +1,123 @@
+@font-face {
+    font-family: "ALS Sirius Regular";
+    src: url("/static/fonts/ALS_Sirius_Regular.otf");
+}
+
+@font-face {
+    font-family: "ALS Sirius Bold";
+    src: url("/static/fonts/ALS_Sirius_Bold.otf");
+}
+
+:root {
+    --text_color: #333;
+    --second_color: #646464;
+    --blue: #6491F0;
+    --light_blue: #91aeec;
+    --medium_purple: #9370DB;
+    --bg_navbar: white;
+    --font_regular: "ALS Sirius Regular";
+    --font_bold: "ALS Sirius Bold";
+    --default-time: 0.3s;
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: var(--font_regular);
+    color: var(--text_color);
+}
+
+.background {
+    position: fixed;
+    top: 93%;
+    left: 33.33%;
+    width: 255vh;
+    transform: translate(-45%, -50%);
+    pointer-events: none;
+    z-index: -1;
+}
+
+a {
+    color: var(--text_color);
+    outline-style: none;
+}
+
+a, a:link, a:visited {
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: none;
+    color: var(--medium_purple);
+}
+
+::-webkit-scrollbar {
+    overflow-y: scroll;
+    width: 5px;
+    height: 5px
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--medium_purple);
+    height: 150px;
+    border-radius: 5px;
+}
+
+::selection {
+    background: var(--medium_purple);
+    color: white;
+    text-shadow: none;
+}
+
+.url {
+    outline-style: none;
+    color: var(--text_color);
+    text-decoration: none;
+}
+
+.animate {
+    transition: var(--default-time);
+}
+
+.animate:hover {
+    transition: var(--default-time)
+}
+
+.animate::after {
+    transition: var(--default-time)
+}
+
+.animate::before {
+    transition: var(--default-time)
+}
+
+.animate:checked {
+    transition: var(--default-time)
+}
+
+.notification {
+    background-color: #FFFACD;
+    padding: 1rem;
+    border-radius: 5px;
+}
+
+.noselect {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+.secolor {
+    color: var(--second_color);
+}
+
+.opacity {
+    opacity: 0.6;
+    user-select: none;
+}
