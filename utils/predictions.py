@@ -8,7 +8,7 @@ from scipy.sparse import hstack
 from transformers import pipeline
 
 from basic import config, get_pkl_files, logger
-from preprocessing import preprocess_text, count_emojis, count_whitespaces, count_links, count_tags
+from preprocessing import preprocess_text, count_emojis, count_newlines, count_whitespaces, count_links, count_tags
 
 models_dir = config['MODELS_DIR']
 
@@ -46,8 +46,8 @@ def bert_predict(message: str, threshold: float = 0.5) -> tuple[int, list[float]
     elif prediction == 0:
         probabilities = [score, 1 - score]
 
-    if max(probabilities) < threshold:
-        prediction = abs(prediction - 1)
+    if probabilities[1] < threshold:
+        prediction = 0
 
     return prediction, probabilities
 
@@ -73,8 +73,8 @@ def predict_message(text: str, vectorizer, scaler, model) -> tuple[int, list[flo
 
     # Создание числовых признаков
     numerical_features = pd.DataFrame(
-        [[count_emojis(text), count_whitespaces(text), count_links(text), count_tags(text)]],
-        columns=['emojis', 'whitespaces', 'links', 'tags']
+        [[count_emojis(text), count_newlines(text), count_whitespaces(text), count_links(text), count_tags(text)]],
+        columns=['emojis', 'newlines', 'whitespaces', 'links', 'tags']
     )
     # Масштабирование числовых признаков
     numerical_features_scaled = scaler.transform(numerical_features)
