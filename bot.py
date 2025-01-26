@@ -87,7 +87,7 @@ async def handle_message(message: types.Message) -> None:
         author_name = author.username
         author_chat_member = await bot.get_chat_member(chat_id=message.chat.id, user_id=author_id)
         sent_by_admin = int(author_chat_member.status in ["administrator", "creator"])
-        if not testing:
+        if testing:
             sent_by_admin = 0
         if sent_by_admin:
             return None
