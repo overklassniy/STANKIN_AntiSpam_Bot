@@ -1,16 +1,18 @@
-import asyncio
 import os
 import sys
 from datetime import datetime
 
 from aiogram import Bot, Dispatcher, types, F
-from aiogram.enums import ChatType, ParseMode
+from aiogram.enums import ChatType
 from aiogram.filters import Command
-from aiogram.types import BotCommand, CallbackQuery
+from aiogram.types import BotCommand
 from dotenv import load_dotenv
 
+from panel.app import create_app, db
+from panel.db_models import SpamMessage
+
 sys.path.append("utils")
-from basic import config, logger, update_detected_spam_json_file
+from basic import config, logger
 from apis import get_cas, get_lols
 from predictions import chatgpt_predict, bert_predict, get_predictions
 
@@ -31,8 +33,6 @@ dp = Dispatcher()
 
 # Идентификатор бота
 bot_id = None
-
-detected_spam_json_path = config['DETECTED_SPAM_JSON']
 
 
 # Обработчик команды /code
@@ -86,7 +86,7 @@ async def handle_message(message: types.Message) -> None:
         author_id = author.id
         author_name = author.username
         author_chat_member = await bot.get_chat_member(chat_id=message.chat.id, user_id=author_id)
-        sent_by_admin = int(author_chat_member.status in ["administrator", "creator"])
+        sent_by_admin = int(author_chat_member.status in ["administrator", "creator"]) - 1
         if testing:
             sent_by_admin = 0
         if sent_by_admin:
@@ -120,7 +120,21 @@ async def handle_message(message: types.Message) -> None:
                 "chatgpt_prediction": chatgpt_prediction,
                 "bert_prediction": bert_prediction
             }
-            update_detected_spam_json_file(detected_spam_json_path, result_dict)
+
+            new_spam = SpamMessage(
+                timestamp=result_dict["timestamp"],
+                author_id=result_dict["author_id"],
+                author_username=result_dict["author_username"],
+                message_text=result_dict["message_text"],
+                has_reply_markup=result_dict["has_reply_markup"],
+                cas=result_dict["cas"],
+                lols=result_dict["lols"],
+                chatgpt_prediction=result_dict.get("chatgpt_prediction", 0),
+                bert_prediction=round(result_dict["bert_prediction"][1][1], 7)
+            )
+            with create_app().app_context():
+                db.session.add(new_spam)
+                db.session.commit()
 
             await message.delete()
         else:
