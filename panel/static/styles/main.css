@@ -161,15 +161,46 @@ td {
     white-space: nowrap;
 }
 
+.spam_message {
+    text-align: left;
+}
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding-bottom: 1.5rem;
+}
+
+.pagination-link {
+    margin: 0 5px;
+    padding: 5px 10px;
+    border: 1px solid #ccc;
+    text-decoration: none;
+    font-weight: bold;
+    color: var(--text_color);
+    border-radius: 4px;
+}
+
+.pagination-link:hover {
+    background-color: white;
+}
+
+.pagination-link.active {
+    background-color: var(--medium_purple);
+    color: white;
+}
+
+
 
 @keyframes slideDown {
     from {
         opacity: 0;
-        transform: translateY(-20px); /* Начальная позиция выше */
+        transform: translateY(-20px);
     }
     to {
         opacity: 1;
-        transform: translateY(0); /* Финальная позиция на месте */
+        transform: translateY(0);
     }
 }
 

@@ -1,6 +1,6 @@
 import os
 import sys
-from datetime import timedelta
+from datetime import timedelta, datetime
 
 from dotenv import load_dotenv
 from flask import Flask, session, redirect, url_for
@@ -49,7 +49,7 @@ def create_app():
     db.init_app(app)
 
     # Импортируем модели до вызова db.create_all()
-    from panel.db_models import User
+    from panel.db_models import SpamMessage, User
 
     @app.cli.command('init_db')
     def init_db():
@@ -64,9 +64,32 @@ def create_app():
     def init_admin():
         # Добавляем пользователя "admin", если он ещё не существует
         if not User.query.filter_by(name='admin').first():
-            db.session.add(User(name='admin', password=generate_password_hash(os.getenv('ADMIN_PASSWORD'), method='scrypt'), can_configure=True))
+            db.session.add(User(
+                name='admin',
+                password=generate_password_hash(os.getenv('ADMIN_PASSWORD'), method='scrypt'),
+                can_configure=True
+            ))
             db.session.commit()
             print('Пользователь "admin" добавлен.')
+
+    @app.cli.command('init_spam')
+    def init_spam():
+        """Создаёт тестовое спам-сообщение в базе данных."""
+        test_spam = SpamMessage(
+            timestamp=datetime.now().timestamp(),
+            author_id=123456789,
+            author_username="test_user",
+            message_text="Это тестовое спам-сообщение.",
+            has_reply_markup=False,
+            cas=False,
+            lols=False,
+            chatgpt_prediction=0.8,
+            bert_prediction=0.9
+        )
+
+        db.session.add(test_spam)
+        db.session.commit()
+        print("Тестовое спам-сообщение успешно добавлено в базу данных.")
 
     # Настройка Flask-Login
     login_manager = LoginManager()

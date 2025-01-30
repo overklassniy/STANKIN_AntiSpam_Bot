@@ -55,6 +55,24 @@
         {{ rows | safe }}
         </tbody>
     </table>
+
+    <!-- Навигация по страницам -->
+    <div class="pagination">
+        {% if prev_url %}
+            <a href="{{ prev_url }}" class="pagination-link animate">{{ prev_text }}</a>
+        {% endif %}
+
+        <!-- Номера страниц -->
+        {% for page_num in range(1, total_pages + 1) %}
+            <a href="{{ url_for('main.index', page=page_num) }}" class="pagination-link animate {% if page_num == current_page %}active{% endif %}">
+                {{ page_num }}
+            </a>
+        {% endfor %}
+
+        {% if next_url %}
+            <a href="{{ next_url }}" class="pagination-link animate">{{ next_text }}</a>
+        {% endif %}
+    </div>
 </div>
 </body>
 </html>

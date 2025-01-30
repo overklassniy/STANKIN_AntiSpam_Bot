@@ -111,19 +111,6 @@ def save_json_file(file_path: str, data: Union[dict, list]) -> None:
         json.dump(data, f)
 
 
-def update_detected_spam_json_file(file_path: str, data: Union[dict, list]) -> None:
-    """
-    Добавляет данные в JSON файл.
-
-    Параметры:
-        file_path (str): Путь к JSON файлу.
-        data (dict | list): Данные для добавления.
-    """
-    json_dict = load_json_file(file_path, [])
-    json_dict.append(data)
-    save_json_file(file_path, json_dict)
-
-
 def get_pkl_files(directory) -> Union[list, dict]:
     """
     Возвращает список всех файлов с расширением .pkl из указанной папки.
