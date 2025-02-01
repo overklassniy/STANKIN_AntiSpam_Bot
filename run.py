@@ -2,8 +2,8 @@ import asyncio
 import subprocess
 import threading
 
-from bot import start_bot  # Импорт функции запуска бота
-from utils.basic import config  # Убедитесь, что путь указан верно
+from bot import start_bot
+from utils.basic import config
 
 
 def start_panel():
@@ -11,7 +11,14 @@ def start_panel():
     Запускает панель управления с использованием команды flask run.
     """
     # Команда для запуска Flask с помощью subprocess
-    subprocess.run(["flask", "--app", "panel.app", "run", "--host", "0.0.0.0", "--port", str(config['PANEL_PORT'])])
+    subprocess.run([
+        "flask",
+        "--app", "panel.app",
+        "run",
+        "--host", "0.0.0.0",
+        "--port", str(config['PANEL_PORT']),
+        "--no-reload"
+    ])
 
 
 async def main():

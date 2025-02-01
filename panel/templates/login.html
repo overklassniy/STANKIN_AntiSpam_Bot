@@ -10,6 +10,7 @@
     <title>{{ title }}</title>
     <link rel="stylesheet" href="{{ root_css_path }}">
     <link rel="stylesheet" href="{{ login_css_path }}">
+    <script type="text/javascript" src="{{ login_faq_path }}"></script>
 </head>
 <body>
 <img class="background" src="{{ background_path }}" alt="Фон">
@@ -35,7 +36,10 @@
                     <span class="checkbox-label noselect">{{ remember_me_text }}</span>
                 </div>
                 <button type="submit" class="secolor noselect">{{ submit_login_button_text }}</button>
-                <p class="login_faq"><a class="url animate noselect" href="/faq">{{ login_faq | safe }}</a></p>
+                <div class="login_faq">
+                    <a class="url animate noselect" id="faq_link" href="#">{{ login_faq | safe }}</a>
+                    <p id="faq_text" class="faq-hidden">{{ login_faq_answer | safe }}</p>
+                </div>
             </form>
         </div>
     </div>

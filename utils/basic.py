@@ -28,22 +28,24 @@ def setup_logger() -> logging.Logger:
     Возвращает:
         logging.Logger: Объект логгера для записи логов.
     """
-    os.makedirs(config['LOGS_DIR'], exist_ok=True)
-    current_time = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-    log_file_name = f"{config['LOGS_DIR']}/{current_time}.log"
-
     logger = logging.getLogger()
-    logger.setLevel(logging.INFO)
+    # Если обработчики уже добавлены, не настраиваем логгер заново
+    if not logger.handlers:
+        os.makedirs(config['LOGS_DIR'], exist_ok=True)
+        current_time = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+        log_file_name = f"{config['LOGS_DIR']}/{current_time}.log"
 
-    file_handler = logging.FileHandler(log_file_name)
-    console_handler = logging.StreamHandler()
+        logger.setLevel(logging.INFO)
 
-    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-    file_handler.setFormatter(formatter)
-    console_handler.setFormatter(formatter)
+        file_handler = logging.FileHandler(log_file_name)
+        console_handler = logging.StreamHandler()
 
-    logger.addHandler(file_handler)
-    logger.addHandler(console_handler)
+        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+        file_handler.setFormatter(formatter)
+        console_handler.setFormatter(formatter)
+
+        logger.addHandler(file_handler)
+        logger.addHandler(console_handler)
     return logger
 
 
