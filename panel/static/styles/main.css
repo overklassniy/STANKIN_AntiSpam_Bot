@@ -157,6 +157,10 @@ td {
     font-size: 14pt;
 }
 
+.date {
+    white-space: pre
+}
+
 .probability {
     white-space: nowrap;
 }
@@ -170,6 +174,7 @@ td {
     justify-content: center;
     align-items: center;
     padding-bottom: 1.5rem;
+    margin-top: 1rem;
 }
 
 .pagination-link {
@@ -190,7 +195,6 @@ td {
     background-color: var(--medium_purple);
     color: white;
 }
-
 
 
 @keyframes slideDown {
@@ -240,5 +244,11 @@ td {
     .dropdown-menu.show {
         display: flex;
         animation: slideDown 0.3s ease forwards;
+    }
+
+    .table-responsive {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch; /* для плавного скроллинга на iOS */
     }
 }

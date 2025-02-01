@@ -99,6 +99,41 @@
     text-align: center;
 }
 
+#faq_link {
+    font-size: 11pt;
+    text-align: center;
+}
+
+.faq-hidden {
+    background-color: #f2ffff;
+    border-radius: 5px;
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out, opacity 0.3s ease-out, padding 0.3s ease-out, margin 0.3s ease-out, font-size 0.3s ease-out;
+    margin: 0;
+    padding: 0;
+    text-align: center;
+    font-size: 8pt;
+}
+
+.faq-visible {
+    font-size: 11pt;
+    max-height: 200px;
+    opacity: 1;
+    margin-top: 0.5rem;
+    padding: 5px;
+}
+
+.command-hidden {
+    font-size: 8pt;
+}
+
+.command-visible {
+    font-size: 11pt;
+}
+
+
 @keyframes wobble {
     0% {
         transform: scale(1.025);

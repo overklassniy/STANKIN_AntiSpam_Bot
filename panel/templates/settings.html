@@ -41,7 +41,23 @@
 
 <div class="container">
     <h1 id="table_header">{{ settings_text }}</h1>
-    <p style="font-size: 36pt; text-align: center; padding: 15rem">Пока что тут ничего нет :(</p>
+    <form method="POST" action="/settings">
+        <form method="POST" action="/settings">
+            {% for field in fields %}
+            {% if field.type == 'checkbox' %}
+            <div class="form-group checkbox-group">
+                <label for="{{ field.name }}">{{ field.name }}</label>
+                <input type="checkbox" id="{{ field.name }}" name="{{ field.name }}" value="true" {% if field.value %}checked{% endif %}>
+            </div>
+            {% else %}
+            <div class="form-group">
+                <label for="{{ field.name }}">{{ field.name }}</label>
+                <input type="{{ field.type }}" id="{{ field.name }}" name="{{ field.name }}" value="{{ field.value }}">
+            </div>
+            {% endif %}
+            {% endfor %}
+            <button type="submit">Сохранить</button>
+        </form>
 </div>
 </body>
 </html>

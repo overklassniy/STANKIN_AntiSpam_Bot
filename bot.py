@@ -1,20 +1,19 @@
 import os
-import sys
+import secrets
 from datetime import datetime
 
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.enums import ChatType
-from aiogram.filters import Command
+from aiogram.filters import Command, CommandStart, CommandObject
 from aiogram.types import BotCommand
 from dotenv import load_dotenv
+from werkzeug.security import generate_password_hash
 
 from panel.app import create_app, db
-from panel.db_models import SpamMessage
-
-sys.path.append("utils")
-from basic import config, logger
-from apis import get_cas, get_lols
-from predictions import chatgpt_predict, bert_predict, get_predictions
+from panel.db_models import SpamMessage, User
+from utils.apis import get_cas, get_lols
+from utils.basic import config, logger
+from utils.predictions import chatgpt_predict, bert_predict, get_predictions
 
 # Загрузка переменных окружения
 load_dotenv()
@@ -34,6 +33,23 @@ dp = Dispatcher()
 # Идентификатор бота
 bot_id = None
 
+helpdesk_email = os.getenv('helpdesk_email')
+
+
+# Обработчик команды /start
+@dp.message(CommandStart(deep_link=True))
+async def handle_start_command(message: types.Message, command: CommandObject) -> None:
+    """
+    Обрабатывает команду /start.
+
+    Параметры:
+        message (types.Message): Сообщение, содержащее команду /start.
+        command (aiogram.filters.CommandObject): Объект содержащий аргументы /start.
+    """
+    args = command.args
+    if args == 'get_password':
+        await handle_get_password_command(message)
+
 
 # Обработчик команды /code
 @dp.message(Command(BotCommand(command='code', description='Получить ссылку на GitHub репозиторий бота')))
@@ -41,7 +57,7 @@ async def handle_code_command(message: types.Message) -> None:
     """
     Обрабатывает команду /code и отправляет ссылку на GitHub репозиторий.
 
-    Args:
+    Параметры:
         message (types.Message): Сообщение, содержащее команду /code.
     """
     github_link = "https://github.com/overklassniy/STANKIN_AntiSpam_Bot/"
@@ -53,13 +69,85 @@ async def handle_code_command(message: types.Message) -> None:
         logger.error(f"Error sending GitHub link to {message.chat.id}: {e}")
 
 
+# Обработчик команды /get_password
+@dp.message(Command(BotCommand(command='get_password', description='Получить пароль для авторизации в панели управления Анти-Спам системы')))
+async def handle_get_password_command(message: types.Message) -> None:
+    """
+    Обрабатывает команду /get_password и создает нового пользователя в базе данных Анти-Спам системы.
+
+    Параметры:
+        message (types.Message): Сообщение, содержащее команду /get_password.
+    """
+    author = message.from_user
+    author_id = author.id
+    author_name = author.username
+
+    # Получаем корректный идентификатор чата из конфига.
+    chat_id = config.get("CHAT_ID")
+    try:
+        author_chat_member = await bot.get_chat_member(chat_id=chat_id, user_id=author_id)
+    except Exception as e:
+        logger.error(f"Ошибка при получении информации о члене чата для пользователя {author_id} в чате {chat_id}: {e}")
+        await message.answer(
+            f"Произошла ошибка при проверке ваших прав доступа. Пожалуйста, попробуйте позже или свяжитесь с технической поддержкой по адресу {helpdesk_email}.")
+        return
+
+    # Проверка: является ли пользователь администратором или владельцем группы
+    sent_by_admin = author_chat_member.status in ["administrator", "creator"]
+    if not sent_by_admin:
+        try:
+            await message.answer(
+                f"Вы не обладаете достаточными правами в группе (требуется статус администратора или владельца).\n\n"
+                f"В случае возникновения вопросов – пожалуйста, свяжитесь с технической поддержкой по адресу {helpdesk_email}"
+            )
+            logger.info(f"Попытка доступа без прав: пользователь {author_id} (чат {message.chat.id})")
+        except Exception as e:
+            logger.error(f"Ошибка при отправке сообщения пользователю {message.chat.id}: {e}")
+        return
+
+    try:
+        # Создаем контекст приложения для работы с базой данных
+        app = create_app()
+        with app.app_context():
+            # Получаем пользователя из БД
+            user = User.query.get(author_id)
+
+            # Генерируем новый пароль
+            password = secrets.token_urlsafe(9)
+            hashed_password = generate_password_hash(password, method='scrypt')
+
+            if not user:
+                user = User(
+                    id=author_id,
+                    name=author_name,
+                    password=hashed_password,
+                    can_configure=False
+                )
+                db.session.add(user)
+                logger.info(f"Добавлен новый пользователь {author_id} в базу данных")
+            else:
+                user.password = hashed_password
+                logger.info(f"Обновлен пароль для пользователя {author_id}")
+
+            # Фиксируем изменения в базе данных
+            db.session.commit()
+
+        # Отправляем пользователю его данные
+        await message.answer(f"Ваше имя пользователя: `{author_name}`\nВаш пароль: `{password}`", parse_mode='markdown')
+
+    except Exception as e:
+        logger.error(f"Ошибка при обработке команды /get_password для пользователя {message.chat.id}: {e}")
+        await message.answer(
+            f"Произошла внутренняя ошибка при обработке запроса. Пожалуйста, попробуйте позже или свяжитесь с технической поддержкой по адресу {helpdesk_email}.")
+
+
 # Обработчик личных сообщений
 @dp.message(F.chat.func(lambda chat: chat.type == ChatType.PRIVATE))
 async def handle_private_message(message: types.Message) -> None:
     """
     Обрабатывает личные сообщения пользователей.
 
-    Args:
+    Параметры:
         message (types.Message): Сообщение, полученное ботом.
     """
     # Ответ пользователю, когда бот получает личное сообщение
@@ -77,7 +165,7 @@ async def handle_message(message: types.Message) -> None:
     """
     Обрабатывает сообщения пользователей.
 
-    Args:
+    Параметры:
         message (types.Message): Сообщение, обрабатываемое ботом.
     """
     global bot
@@ -86,7 +174,7 @@ async def handle_message(message: types.Message) -> None:
         author_id = author.id
         author_name = author.username
         author_chat_member = await bot.get_chat_member(chat_id=message.chat.id, user_id=author_id)
-        sent_by_admin = int(author_chat_member.status in ["administrator", "creator"]) - 1
+        sent_by_admin = int(author_chat_member.status in ["administrator", "creator"])
         if testing:
             sent_by_admin = 0
         if sent_by_admin:
@@ -159,8 +247,9 @@ async def start_bot() -> None:
     """
     Запускает бота и инициализирует диспетчер событий.
     """
-    global bot_id
     global bot
+    global bot_id
+
     bot = Bot(token=TOKEN)
     bot_id = bot.id
     await dp.start_polling(bot, polling_timeout=30)

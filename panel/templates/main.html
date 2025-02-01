@@ -41,20 +41,22 @@
 
 <div class="container">
     <h1 id="table_header">{{ detected_spam_text_table }}</h1>
-    <table>
-        <thead>
-        <tr>
-            <th>{{ date_text }}</th>
-            <th>{{ id_text }}</th>
-            <th>{{ username_text }}</th>
-            <th>{{ spam_text }}</th>
-            <th>{{ probability_text }}</th>
-        </tr>
-        </thead>
-        <tbody>
-        {{ rows | safe }}
-        </tbody>
-    </table>
+    <div class="table-responsive">
+        <table>
+            <thead>
+            <tr>
+                <th>{{ date_text }}</th>
+                <th>{{ id_text }}</th>
+                <th>{{ username_text }}</th>
+                <th>{{ spam_text }}</th>
+                <th>{{ probability_text }}</th>
+            </tr>
+            </thead>
+            <tbody>
+            {{ rows | safe }}
+            </tbody>
+        </table>
+    </div>
 
     <!-- Навигация по страницам -->
     <div class="pagination">
