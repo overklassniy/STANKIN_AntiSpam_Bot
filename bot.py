@@ -151,7 +151,7 @@ async def handle_private_message(message: types.Message) -> None:
         message (types.Message): Сообщение, полученное ботом.
     """
     # Ответ пользователю, когда бот получает личное сообщение
-    response_text = "tet"
+    response_text = "Здравствуйте, пожалуйста, ознакомьтесь со списком моих комманд в соответствующем меню."
     try:
         await message.answer(response_text)
         logger.info(f"Sent private message to {message.chat.id}")
