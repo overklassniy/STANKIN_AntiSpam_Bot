@@ -27,6 +27,7 @@ settings_text = 'Настройки'
 logout_text = 'Выйти'
 
 helpdesk_email = os.getenv('helpdesk_email')
+github_url = 'https://github.com/overklassniy/STANKIN_AntiSpam_Bot/'
 
 
 @main_bp.route('/')
@@ -87,6 +88,7 @@ def index():
         og_title=title,
         og_description=og_description,
         title=title,
+        github_url=github_url,
         about_text=about_text,
         detected_spam_text=detected_spam_text,
         settings_text=settings_text,
@@ -113,30 +115,6 @@ def spam():
     return redirect(url_for('main.index'))
 
 
-@main_bp.route('/about')
-@login_required
-def about():
-    return render_template(
-        'about.html',
-
-        root_css_path=root_css_path,
-        main_css_path=main_css_path,
-
-        hamburger_js_path=hamburger_js_path,
-
-        icon_path=icon_path,
-        background_path=background_path,
-
-        og_title=title,
-        og_description=about_text,
-        title=title,
-        about_text=about_text,
-        detected_spam_text=detected_spam_text,
-        settings_text=settings_text,
-        logout_text=logout_text
-    )
-
-
 @main_bp.route('/settings')
 @login_required
 def settings():
@@ -158,6 +136,7 @@ def settings():
         og_title=title,
         og_description=about_text,
         title=title,
+        github_url=github_url,
         about_text=about_text,
         detected_spam_text=detected_spam_text,
         settings_text=settings_text,
