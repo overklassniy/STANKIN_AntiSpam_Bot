@@ -10,6 +10,7 @@
     <title>{{ title }}</title>
     <link rel="stylesheet" href="{{ root_css_path }}">
     <link rel="stylesheet" href="{{ main_css_path }}">
+    <link rel="stylesheet" href="{{ settings_css_path }}">
     <script type="text/javascript" src="{{ hamburger_js_path }}"></script>
 </head>
 <body>
@@ -45,18 +46,25 @@
         <form method="POST" action="/settings">
             {% for field in fields %}
             {% if field.type == 'checkbox' %}
-            <div class="form-group checkbox-group">
+            <div class="form-group checkbox-group checkbox-wrapper">
                 <label for="{{ field.name }}">{{ field.name }}</label>
-                <input type="checkbox" id="{{ field.name }}" name="{{ field.name }}" value="true" {% if field.value %}checked{% endif %}>
+                <input {% if not can_configure %}disabled{% endif %} type="checkbox" id="{{ field.name }}" name="{{ field.name }}" value="true" {% if field.value %}checked{% endif %}>
             </div>
             {% else %}
             <div class="form-group">
                 <label for="{{ field.name }}">{{ field.name }}</label>
-                <input type="{{ field.type }}" id="{{ field.name }}" name="{{ field.name }}" value="{{ field.value }}">
+                <input {% if not can_configure %}disabled{% endif %} class="text_input" type="{{ field.type }}" id="{{ field.name }}" name="{{ field.name }}" value="{{ field.value }}">
             </div>
             {% endif %}
             {% endfor %}
-            <button type="submit">Сохранить</button>
+            {% with messages = get_flashed_messages() %}
+            {% if messages %}
+            <div class="notification">
+                {{ messages[0] | safe }}
+            </div>
+            {% endif %}
+            {% endwith %}
+            <button {% if not can_configure %}disabled{% endif %} class="save_config_button secolor noselect" role="button" type="submit">Сохранить</button>
         </form>
 </div>
 </body>

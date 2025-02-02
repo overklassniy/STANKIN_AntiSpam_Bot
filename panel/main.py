@@ -1,9 +1,10 @@
 import json
+import os
 import sys
 from datetime import datetime
 
 from flask import Blueprint, render_template, redirect, url_for, request, flash
-from flask_login import login_required
+from flask_login import login_required, current_user
 
 from panel.app import title, icon_path, background_path, root_css_path
 from panel.db_models import SpamMessage
@@ -16,6 +17,7 @@ main_bp = Blueprint('main', __name__)
 
 # Пути к статическим ресурсам
 main_css_path = '/static/styles/main.css'
+settings_css_path = '/static/styles/settings.css'
 
 hamburger_js_path = '/static/scripts/hamburger.js'
 
@@ -23,6 +25,8 @@ about_text = 'О системе'
 detected_spam_text = 'Обнаруженный спам'
 settings_text = 'Настройки'
 logout_text = 'Выйти'
+
+helpdesk_email = os.getenv('helpdesk_email')
 
 
 @main_bp.route('/')
@@ -137,12 +141,14 @@ def about():
 @login_required
 def settings():
     fields = prepare_fields(config)
+    can_configure = current_user.can_configure
 
     return render_template(
         'settings.html',
 
         root_css_path=root_css_path,
         main_css_path=main_css_path,
+        settings_css_path=settings_css_path,
 
         hamburger_js_path=hamburger_js_path,
 
@@ -156,7 +162,8 @@ def settings():
         detected_spam_text=detected_spam_text,
         settings_text=settings_text,
         logout_text=logout_text,
-        fields=fields
+        fields=fields,
+        can_configure=can_configure
     )
 
 
@@ -167,49 +174,51 @@ def settings_post():
     Обрабатывает POST-запрос для сохранения настроек.
     Получает данные из формы, обновляет конфигурацию и сохраняет её в файл config.json.
     """
+    can_configure = current_user.can_configure
+    if can_configure:
+        # Создаём новый словарь для обновлённой конфигурации
+        new_config = {}
 
-    # Создаём новый словарь для обновлённой конфигурации
-    new_config = {}
+        # Проходим по всем ключам исходного конфига и обновляем их значения из формы
+        for key, value in config.items():
+            # Для булевых значений: если чекбокс отмечен, его значение придёт в form,
+            # если нет – ключ отсутствует, и устанавливаем False.
+            if isinstance(value, bool):
+                new_config[key] = key in request.form
+            # Для целых чисел
+            elif isinstance(value, int):
+                form_value = request.form.get(key, None)
+                try:
+                    new_config[key] = int(form_value) if form_value is not None else value
+                except ValueError:
+                    new_config[key] = value
+            # Для чисел с плавающей точкой
+            elif isinstance(value, float):
+                form_value = request.form.get(key, None)
+                try:
+                    new_config[key] = float(form_value) if form_value is not None else value
+                except ValueError:
+                    new_config[key] = value
+            # Для остальных (строковые значения и т.п.)
+            else:
+                new_config[key] = request.form.get(key, value)
 
-    # Проходим по всем ключам исходного конфига и обновляем их значения из формы
-    for key, value in config.items():
-        # Для булевых значений: если чекбокс отмечен, его значение придёт в form,
-        # если нет – ключ отсутствует, и устанавливаем False.
-        if isinstance(value, bool):
-            new_config[key] = key in request.form
-        # Для целых чисел
-        elif isinstance(value, int):
-            form_value = request.form.get(key, None)
-            try:
-                new_config[key] = int(form_value) if form_value is not None else value
-            except ValueError:
-                new_config[key] = value
-        # Для чисел с плавающей точкой
-        elif isinstance(value, float):
-            form_value = request.form.get(key, None)
-            try:
-                new_config[key] = float(form_value) if form_value is not None else value
-            except ValueError:
-                new_config[key] = value
-        # Для остальных (строковые значения и т.п.)
-        else:
-            new_config[key] = request.form.get(key, value)
+        # Путь до файла config.json.
+        config_path = 'config.json'
 
-    # Путь до файла config.json.
-    config_path = 'config.json'
+        # Записываем обновлённую конфигурацию в файл с форматированием и корректной кодировкой
+        try:
+            with open(config_path, 'w', encoding='utf-8') as f:
+                json.dump(new_config, f, indent=4, ensure_ascii=False)
+            flash("Настройки успешно сохранены! Пожалуйста, перезагрузите систему.", "success")
+        except Exception as e:
+            flash(f"Ошибка при сохранении настроек: {str(e)}", "error")
 
-    # Записываем обновлённую конфигурацию в файл с форматированием и корректной кодировкой
-    try:
-        with open(config_path, 'w', encoding='utf-8') as f:
-            json.dump(new_config, f, indent=4, ensure_ascii=False)
-        flash("Настройки успешно сохранены! Пожалуйста, перезагрузите систему.", "success")
-    except Exception as e:
-        flash(f"Ошибка при сохранении настроек: {str(e)}", "error")
-        return redirect(url_for('main.settings'))
-
-    # При необходимости можно обновить глобальный объект config (если используется без перезапуска)
-    config.clear()
-    config.update(new_config)
+        # При необходимости можно обновить глобальный объект config (если используется без перезапуска)
+        config.clear()
+        config.update(new_config)
+    else:
+        flash(f'Вы не можете редактировать конфигурацию системы. Пожалуйста, обратитесь в техническую поддержку по адресу <a class="animate" href="mailto:{helpdesk_email}">{helpdesk_email}</a> для получения полномочий.', "error")
 
     # Перенаправляем пользователя обратно на страницу настроек
     return redirect(url_for('main.settings'))
