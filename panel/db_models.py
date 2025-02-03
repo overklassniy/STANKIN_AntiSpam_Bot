@@ -21,3 +21,9 @@ class SpamMessage(db.Model):
     lols = db.Column(db.Boolean, default=False)
     chatgpt_prediction = db.Column(db.Float, nullable=True)
     bert_prediction = db.Column(db.Float, nullable=True)
+
+
+class MutedUser(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    muted_till_timestamp = db.Column(db.Float, nullable=False)
+    relapse_number = db.Column(db.Integer, nullable=True, default=0)

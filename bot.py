@@ -10,9 +10,9 @@ from dotenv import load_dotenv
 from werkzeug.security import generate_password_hash
 
 from panel.app import create_app, db
-from panel.db_models import SpamMessage, User
+from panel.db_models import SpamMessage, User, MutedUser
 from utils.apis import get_cas, get_lols
-from utils.basic import config, logger
+from utils.basic import config, logger, add_hours_get_timestamp
 from utils.predictions import chatgpt_predict, bert_predict, get_predictions
 
 # Загрузка переменных окружения
@@ -100,9 +100,9 @@ async def handle_get_password_command(message: types.Message) -> None:
                 f"Вы не обладаете достаточными правами в группе (требуется статус администратора или владельца).\n\n"
                 f"В случае возникновения вопросов – пожалуйста, свяжитесь с технической поддержкой по адресу {helpdesk_email}"
             )
-            logger.info(f"Попытка доступа без прав: пользователь {author_id} (чат {message.chat.id})")
+            logger.info(f"Попытка доступа без прав: пользователь {author_id}")
         except Exception as e:
-            logger.error(f"Ошибка при отправке сообщения пользователю {message.chat.id}: {e}")
+            logger.error(f"Ошибка при отправке сообщения пользователю {author_id}: {e}")
         return
 
     try:
@@ -136,7 +136,7 @@ async def handle_get_password_command(message: types.Message) -> None:
         await message.answer(f"Ваше имя пользователя: `{author_name}`\nВаш пароль: `{password}`", parse_mode='markdown')
 
     except Exception as e:
-        logger.error(f"Ошибка при обработке команды /get_password для пользователя {message.chat.id}: {e}")
+        logger.error(f"Ошибка при обработке команды /get_password для пользователя {author_id}: {e}")
         await message.answer(
             f"Произошла внутренняя ошибка при обработке запроса. Пожалуйста, попробуйте позже или свяжитесь с технической поддержкой по адресу {helpdesk_email}.")
 
@@ -154,9 +154,9 @@ async def handle_private_message(message: types.Message) -> None:
     response_text = "Здравствуйте, пожалуйста, ознакомьтесь со списком моих комманд в соответствующем меню."
     try:
         await message.answer(response_text)
-        logger.info(f"Sent private message to {message.chat.id}")
+        logger.info(f"Sent private message to {message.from_user.id}")
     except Exception as e:
-        logger.error(f"Error sending private message to {message.chat.id}: {e}")
+        logger.error(f"Error sending private message to {message.from_user.id}: {e}")
 
 
 # Обработчик сообщений
@@ -169,11 +169,14 @@ async def handle_message(message: types.Message) -> None:
         message (types.Message): Сообщение, обрабатываемое ботом.
     """
     global bot
+
+    chat_id = config.get("CHAT_ID")
+
     try:
         author = message.from_user
         author_id = author.id
         author_name = author.username
-        author_chat_member = await bot.get_chat_member(chat_id=message.chat.id, user_id=author_id)
+        author_chat_member = await bot.get_chat_member(chat_id=chat_id, user_id=author_id)
         sent_by_admin = int(author_chat_member.status in ["administrator", "creator"])
         if testing:
             sent_by_admin = 0
@@ -225,6 +228,27 @@ async def handle_message(message: types.Message) -> None:
                 db.session.commit()
 
             await message.delete()
+            if config['MUTING']:
+                try:
+                    with create_app().app_context():
+                        muted_user_db = MutedUser.query.filter_by(id=author_id).first()
+                        mute = types.ChatPermissions(can_send_messages=False)
+
+                        if not muted_user_db:
+                            until_date = add_hours_get_timestamp(24)
+                            muted_user_db = MutedUser(id=author_id, muted_till_timestamp=until_date, relapse_number=1)
+                            db.session.add(muted_user_db)
+                        else:
+                            muted_user_db.relapse_number += 1
+                            until_date = add_hours_get_timestamp(168 if muted_user_db.relapse_number == 2 else 999)
+                            muted_user_db.muted_till_timestamp = until_date
+
+                        db.session.commit()
+                        await bot.restrict_chat_member(chat_id=chat_id, user_id=author_id, permissions=mute, until_date=until_date)
+                        logger.info(f"Muted user {author_id} till {until_date}")
+                except Exception as e:
+                    logger.error(f"Error muting user {author_id}: {e}")
+                    db.session.rollback()
         else:
             cmodels_predictions = get_predictions(message_text)
 
@@ -238,9 +262,9 @@ async def handle_message(message: types.Message) -> None:
 Предикт кастомных моделей: {cmodels_predictions}'''
 
             await message.reply(reply_message)
-            logger.info(f"Sent message to {message.chat.id}")
+            logger.info(f"Sent message to {chat_id}")
     except Exception as e:
-        logger.error(f"Error processing message to {message.chat.id}: {e}")
+        logger.error(f"Error sending message to {chat_id}: {e}")
 
 
 async def start_bot() -> None:

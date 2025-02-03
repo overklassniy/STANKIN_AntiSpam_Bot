@@ -49,7 +49,7 @@ def create_app():
     db.init_app(app)
 
     # Импортируем модели до вызова db.create_all()
-    from panel.db_models import SpamMessage, User
+    from panel.db_models import SpamMessage, User, MutedUser
 
     @app.cli.command('init_db')
     def init_db():
@@ -90,6 +90,17 @@ def create_app():
         db.session.add(test_spam)
         db.session.commit()
         print("Тестовое спам-сообщение успешно добавлено в базу данных.")
+
+    @app.cli.command('init_muted')
+    def init_muted():
+        """Создаёт тестового ограниченного пользователя в базе данных."""
+        test_muted_user = MutedUser(
+            muted_till_timestamp=4102455600
+        )
+
+        db.session.add(test_muted_user)
+        db.session.commit()
+        print("Тестовый ограниченный пользователь успешно добавлен в базу данных.")
 
     # Настройка Flask-Login
     login_manager = LoginManager()
