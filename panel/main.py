@@ -2,6 +2,7 @@ import json
 import os
 import sys
 from datetime import datetime
+from typing import Any
 
 from flask import Blueprint, render_template, redirect, url_for, request, flash
 from flask_login import login_required, current_user
@@ -10,7 +11,7 @@ from panel.app import title, icon_path, background_path, root_css_path
 from panel.db_models import SpamMessage
 
 sys.path.append("..")
-from utils.basic import config, plural_form
+from utils.basic import config, logger, plural_form
 from utils.config_web import prepare_fields
 
 main_bp = Blueprint('main', __name__)
@@ -18,7 +19,6 @@ main_bp = Blueprint('main', __name__)
 # Пути к статическим ресурсам
 main_css_path = '/static/styles/main.css'
 settings_css_path = '/static/styles/settings.css'
-
 hamburger_js_path = '/static/scripts/hamburger.js'
 
 about_text = 'О системе'
@@ -32,7 +32,15 @@ github_url = 'https://github.com/overklassniy/STANKIN_AntiSpam_Bot/'
 
 @main_bp.route('/')
 @login_required
-def index():
+def index() -> str:
+    """
+    Формирует главную страницу со списком обнаруженного спама.
+
+    Возвращает:
+        str: Сформированное HTML-содержимое страницы.
+    """
+    logger.info('Обработка запроса главной страницы "/".')
+
     og_description = ''
     date_text = 'Дата'
     id_text = 'ID пользователя'
@@ -44,15 +52,19 @@ def index():
 
     # Настройки пагинации
     per_page = config['PER_PAGE']  # Количество записей на странице
-    page = request.args.get('page', 1, type=int)  # Получаем номер текущей страницы из запроса, по умолчанию 1
+    page = request.args.get('page', 1, type=int)  # Номер текущей страницы (по умолчанию 1)
+    logger.debug("Настроена пагинация: страница %s, записей на странице %s.", page, per_page)
 
     # Запрос с пагинацией
-    detected_spam_list = SpamMessage.query.order_by(SpamMessage.timestamp.desc()).paginate(page=page, per_page=per_page, error_out=False)
+    detected_spam_list = SpamMessage.query.order_by(SpamMessage.timestamp.desc()).paginate(
+        page=page, per_page=per_page, error_out=False
+    )
+    logger.info("Получено %s записей спама из базы данных.", detected_spam_list.total)
 
     count = detected_spam_list.total
     rows = ""
     for item in detected_spam_list.items:
-        date = datetime.fromtimestamp(item.timestamp).strftime("%d.%m.%Y\n%H:%M:%S")
+        date = datetime.fromtimestamp(item.timestamp).strftime("%d.%m.%Y<br>%H:%M:%S")
         rows += f"""
                 <tr>
                     <td class="date">{date}</td>
@@ -67,16 +79,18 @@ def index():
                     </td>
                 </tr>
             """
-
     detected_spam_text_table = f'Обнаруженный спам: {count} {plural_form(count, "запись", "записей", "записи")} (показываются {per_page})'
+    logger.debug("Сформирована таблица спам-сообщений: %s", detected_spam_text_table)
 
-    # Добавим переменные для навигации по страницам
+    # Навигация по страницам
     prev_url = url_for('main.index', page=detected_spam_list.prev_num) if detected_spam_list.has_prev else None
     next_url = url_for('main.index', page=detected_spam_list.next_num) if detected_spam_list.has_next else None
     total_pages = detected_spam_list.pages  # Общее количество страниц
     current_page = detected_spam_list.page  # Текущая страница
 
-    return render_template(
+    logger.info("Пагинация: страница %s из %s.", current_page, total_pages)
+
+    rendered_page = render_template(
         'main.html',
         root_css_path=root_css_path,
         main_css_path=main_css_path,
@@ -107,21 +121,35 @@ def index():
         total_pages=total_pages,
         current_page=current_page
     )
+    logger.info("Главная страница успешно сформирована.")
+    return rendered_page
 
 
 @main_bp.route('/spam')
 @login_required
-def spam():
+def spam() -> Any:
+    """
+    Перенаправляет пользователя на главную страницу.
+    """
+    logger.info("Запрос '/spam' перенаправляется на главную страницу.")
     return redirect(url_for('main.index'))
 
 
 @main_bp.route('/settings')
 @login_required
-def settings():
+def settings() -> str:
+    """
+    Формирует страницу настроек.
+
+    Возвращает:
+        str: Сформированное HTML-содержимое страницы настроек.
+    """
+    logger.info("Обработка запроса страницы настроек '/settings'.")
     fields = prepare_fields(config)
     can_configure = current_user.can_configure
+    logger.debug("Права пользователя на изменение настроек: %s", can_configure)
 
-    return render_template(
+    rendered_page = render_template(
         'settings.html',
 
         root_css_path=root_css_path,
@@ -144,60 +172,68 @@ def settings():
         fields=fields,
         can_configure=can_configure
     )
+    logger.info("Страница настроек успешно сформирована.")
+    return rendered_page
 
 
 @main_bp.route('/settings', methods=['POST'])
 @login_required
-def settings_post():
+def settings_post() -> Any:
     """
-    Обрабатывает POST-запрос для сохранения настроек.
-    Получает данные из формы, обновляет конфигурацию и сохраняет её в файл config.json.
+    Обрабатывает POST-запрос для сохранения настроек. Получает данные из формы, обновляет конфигурацию и сохраняет её в файл config.json.
     """
+    logger.info("Получен POST-запрос для обновления настроек.")
     can_configure = current_user.can_configure
     if can_configure:
-        # Создаём новый словарь для обновлённой конфигурации
+        # Создаем новый словарь для обновленной конфигурации
         new_config = {}
 
-        # Проходим по всем ключам исходного конфига и обновляем их значения из формы
+        # Обновляем значения конфигурации из данных формы
         for key, value in config.items():
-            # Для булевых значений: если чекбокс отмечен, его значение придёт в form,
-            # если нет – ключ отсутствует, и устанавливаем False.
             if isinstance(value, bool):
                 new_config[key] = key in request.form
-            # Для целых чисел
+                logger.debug("Обновлена булевая настройка '%s': %s", key, new_config[key])
             elif isinstance(value, int):
                 form_value = request.form.get(key, None)
                 try:
                     new_config[key] = int(form_value) if form_value is not None else value
+                    logger.debug("Обновлена целочисленная настройка '%s': %s", key, new_config[key])
                 except ValueError:
                     new_config[key] = value
-            # Для чисел с плавающей точкой
+                    logger.warning("Неверное значение для настройки '%s'. Использовано значение по умолчанию.", key)
             elif isinstance(value, float):
                 form_value = request.form.get(key, None)
                 try:
                     new_config[key] = float(form_value) if form_value is not None else value
+                    logger.debug("Обновлена настройка с плавающей точкой '%s': %s", key, new_config[key])
                 except ValueError:
                     new_config[key] = value
-            # Для остальных (строковые значения и т.п.)
+                    logger.warning("Неверное значение для настройки '%s'. Использовано значение по умолчанию.", key)
             else:
                 new_config[key] = request.form.get(key, value)
+                logger.debug("Обновлена строковая настройка '%s': %s", key, new_config[key])
 
-        # Путь до файла config.json.
         config_path = 'config.json'
-
-        # Записываем обновлённую конфигурацию в файл с форматированием и корректной кодировкой
         try:
             with open(config_path, 'w', encoding='utf-8') as f:
                 json.dump(new_config, f, indent=4, ensure_ascii=False)
             flash("Настройки успешно сохранены! Пожалуйста, перезагрузите систему.", "success")
+            logger.info("Конфигурация успешно сохранена в файл '%s'.", config_path)
         except Exception as e:
             flash(f"Ошибка при сохранении настроек: {str(e)}", "error")
+            logger.error("Ошибка при сохранении настроек в файл '%s': %s", config_path, e)
 
-        # При необходимости можно обновить глобальный объект config (если используется без перезапуска)
+        # Обновляем глобальный объект config
         config.clear()
         config.update(new_config)
+        logger.info("Глобальный объект конфигурации обновлен.")
     else:
-        flash(f'Вы не можете редактировать конфигурацию системы. Пожалуйста, обратитесь в техническую поддержку по адресу <a class="animate" href="mailto:{helpdesk_email}">{helpdesk_email}</a> для получения полномочий.', "error")
+        flash(
+            f'Вы не можете редактировать конфигурацию системы. Пожалуйста, обратитесь в техническую поддержку по адресу '
+            f'<a class="animate" href="mailto:{helpdesk_email}">{helpdesk_email}</a> для получения полномочий.',
+            "error"
+        )
+        logger.warning("Пользователь %s не имеет прав для редактирования настроек.", current_user.id)
 
-    # Перенаправляем пользователя обратно на страницу настроек
+    logger.info("Перенаправление пользователя обратно на страницу настроек.")
     return redirect(url_for('main.settings'))

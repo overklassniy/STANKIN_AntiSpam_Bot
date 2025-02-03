@@ -1,11 +1,20 @@
-def prepare_fields(config):
+from utils.basic import logger
+
+
+def prepare_fields(config: dict) -> list:
     """
     Подготавливает список полей для шаблона.
-    Каждое поле представлено в виде словаря с ключами:
-    - name: имя поля (ключ из конфига)
-    - value: значение параметра
-    - type: тип input ('checkbox' для булевых, 'number' для чисел, 'text' для остальных)
+
+    Аргументы:
+        config (dict): Конфигурация с параметрами.
+
+    Возвращает:
+        list: Список словарей, где каждый словарь содержит:
+              'name': имя поля (ключ из конфигурации),
+              'value': значение параметра,
+              'type': тип input ('checkbox' для булевых, 'number' для чисел, 'text' для остальных).
     """
+    logger.info("Начало подготовки полей для шаблона из конфигурации.")
     fields = []
     for key, value in config.items():
         if isinstance(value, bool):
@@ -19,4 +28,6 @@ def prepare_fields(config):
             'value': value,
             'type': field_type
         })
+        logger.debug("Добавлено поле: %s, значение: %s, тип: %s", key, value, field_type)
+    logger.info("Подготовка полей завершена. Всего полей: %s", len(fields))
     return fields

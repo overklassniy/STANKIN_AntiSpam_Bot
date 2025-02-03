@@ -3,134 +3,90 @@ import re
 import emoji
 import regex
 
+from utils.basic import logger
+
+# Регулярное выражение для поиска ссылок
+url_pattern = r'(https?://[^\s]+|www\.[^\s]+|[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(?:/[^\s]*)?)'
+
 
 def count_emojis(text: str) -> int:
     """
     Считает количество эмодзи в тексте.
 
-    Параметры:
+    Аргументы:
         text (str): Исходный текст.
 
     Возвращает:
         int: Количество найденных эмодзи.
     """
-    # Разбиваем текст на "графемные кластеры" (учитывая составные эмодзи)
-    data = regex.findall(r'\X', text)
-    # Считаем эмодзи
+    data = regex.findall(r'\X', text)  # Разбиваем текст на "графемные кластеры"
     emoji_counter = sum(emoji.is_emoji(word) for word in data)
+    logger.debug("Количество эмодзи: %d", emoji_counter)
     return emoji_counter
 
 
 def count_newlines(text: str) -> int:
     """
     Считает количество символов новой строки (\n) в тексте.
-
-    Параметры:
-        text (str): Исходный текст.
-
-    Возвращает:
-        int: Количество символов новой строки.
     """
-    # Подсчёт символов новой строки
     newline_count = text.count('\n')
+    logger.debug("Количество новых строк: %d", newline_count)
     return newline_count
 
 
 def count_whitespaces(text: str) -> int:
     """
     Считает количество последовательных пробелов (два или более) в тексте.
-
-    Параметры:
-        text (str): Исходный текст.
-
-    Возвращает:
-        int: Количество найденных последовательных пробелов.
     """
-    # Считаем последовательности из двух и более пробелов
     extra_spaces_count = len(re.findall(r'\s{2,}', text))
+    logger.debug("Количество лишних пробелов: %d", extra_spaces_count)
     return extra_spaces_count
-
-
-# Регулярное выражение для поиска ссылок
-url_pattern = r'(https?://[^\s]+|www\.[^\s]+|[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(?:/[^\s]*)?)'
 
 
 def count_links(text: str) -> int:
     """
     Считает количество ссылок в тексте.
-
-    Параметры:
-        text (str): Исходный текст.
-
-    Возвращает:
-        int: Количество найденных ссылок.
     """
-    # Найти все ссылки в тексте
     links = re.findall(url_pattern, text)
+    logger.debug("Количество ссылок: %d", len(links))
     return len(links)
 
 
 def count_tags(text: str) -> int:
     """
     Считает количество упоминаний (тегов) в тексте.
-
-    Параметры:
-        text (str): Исходный текст.
-
-    Возвращает:
-        int: Количество найденных тегов.
     """
-    # Подсчёт символов "@" как маркеров тегов
     tag_count = text.count('@')
+    logger.debug("Количество тегов: %d", tag_count)
     return tag_count
 
 
 def remove_emojis(text: str) -> str:
     """
     Удаляет все эмодзи из текста.
-
-    Параметры:
-        text (str): Исходный текст.
-
-    Возвращает:
-        str: Текст без эмодзи.
     """
-    # Разбиваем текст на "графемные кластеры"
     data = regex.findall(r'\X', text)
-    # Удаляем все эмодзи
     text_without_emojis = ''.join(word for word in data if not emoji.is_emoji(word))
+    logger.debug("Текст после удаления эмодзи: %s", text_without_emojis)
     return text_without_emojis
 
 
 def replace_links(text: str) -> str:
     """
     Заменяет все ссылки в тексте на "[LINK]".
-
-    Параметры:
-        text (str): Исходный текст.
-
-    Возвращает:
-        str: Текст с заменёнными ссылками.
     """
-    # Заменить ссылки на [LINK]
     text = re.sub(url_pattern, '[LINK]', text)
+    logger.debug("Текст после замены ссылок: %s", text)
     return text
 
 
 def replace_tags(text: str) -> str:
     """
     Заменяет все упоминания (теги) в тексте на "[TAG]".
-
-    Параметры:
-        text (str): Исходный текст.
-
-    Возвращает:
-        str: Текст с заменёнными тегами.
     """
-    # Регулярное выражение для тегов
     tag_pattern = r'@[a-zA-Z0-9_]+'
-    # Замена тегов на [TAG]
     text = re.sub(tag_pattern, '[TAG]', text)
+    logger.debug("Текст после замены тегов: %s", text)
     return text
 
 
@@ -146,7 +102,7 @@ def preprocess_text(
     """
     Предобрабатывает текст, включая нормализацию регистра, удаление пунктуации, эмодзи, ссылок, тегов и пробелов.
 
-    Параметры:
+    Аргументы:
         text (str): Исходный текст.
         lower (bool): Приводить ли текст к нижнему регистру (по умолчанию True).
         remove_punctuation (bool): Удалять ли пунктуацию (по умолчанию True).
@@ -158,28 +114,32 @@ def preprocess_text(
     Возвращает:
         str: Обработанный текст.
     """
-    # Приведение текста к нижнему регистру
+    logger.info("Начало предобработки текста: %s", text)
+
     if lower:
         text = text.lower()
-    # Замена ссылок на [LINK]
+        logger.debug("Текст после приведения к нижнему регистру: %s", text)
+
     if remove_links:
         text = replace_links(text)
-    # Замена тегов на [TAG]
+
     if remove_tags:
         text = replace_tags(text)
-    # Удаление пунктуации
+
     if remove_punctuation:
-        text = re.sub(r'[^\w\s]', '', text)  # Удаляет пунктуацию
-        # Восстановление [LINK] после очистки пунктуации
+        text = re.sub(r'[^\w\s]', '', text)
+        logger.debug("Текст после удаления пунктуации: %s", text)
         if remove_links:
             text = text.replace('LINK', '[LINK]')
-        # Восстановление [TAG] после очистки пунктуации
         if remove_tags:
             text = text.replace('TAG', '[TAG]')
-    # Удаление эмодзи
+
     if remove_emoji:
         text = remove_emojis(text)
-    # Удаление лишних пробелов и символов новой строки
+
     if remove_whitespaces:
         text = re.sub(r'\s+', ' ', text).strip()
+        logger.debug("Текст после удаления лишних пробелов: %s", text)
+
+    logger.info("Предобработка завершена. Итоговый текст: %s", text)
     return text
