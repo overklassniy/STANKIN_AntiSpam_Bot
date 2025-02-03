@@ -2,7 +2,10 @@ import asyncio
 import subprocess
 import threading
 
+from waitress import serve
+
 from bot import start_bot
+from panel.app import create_app
 from utils.basic import config
 
 
@@ -10,15 +13,20 @@ def start_panel():
     """
     Запускает панель управления с использованием команды flask run.
     """
-    # Команда для запуска Flask с помощью subprocess
-    subprocess.run([
-        "flask",
-        "--app", "panel.app",
-        "run",
-        "--host", "0.0.0.0",
-        "--port", str(config['PANEL_PORT']),
-        "--no-reload"
-    ])
+    if config['TESTING']:
+        # Команда для запуска Flask с помощью subprocess
+        subprocess.run([
+            "flask",
+            "--app", "panel.app",
+            "run",
+            "--host", "0.0.0.0",
+            "--port", str(config['PANEL_PORT']),
+            "--no-reload"
+        ])
+    else:
+        app = create_app()
+        # Команда для запуска Flask с помощью waitress (WSGI)
+        serve(app, host="0.0.0.0", port=config['PANEL_PORT'])
 
 
 async def main():

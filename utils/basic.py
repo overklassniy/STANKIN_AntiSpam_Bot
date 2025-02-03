@@ -2,7 +2,7 @@
 import json
 import logging
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Union
 
 
@@ -134,3 +134,10 @@ def get_pkl_files(directory) -> Union[list, dict]:
 
     except Exception as e:
         return {"error": str(e)}
+
+
+def add_hours_get_timestamp(n: int) -> float:
+    if n == 999:
+        return 4102455600  # 2100 год
+    new_time = datetime.now() + timedelta(hours=n)
+    return new_time.timestamp()

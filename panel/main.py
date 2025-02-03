@@ -58,7 +58,7 @@ def index():
                     <td class="date">{date}</td>
                     <td>{item.author_id}</td>
                     <td>{item.author_username or 'N/A'}</td>
-                    <td class="spam_message">{item.message_text.replace('\n', '<br>')}</td>
+                    <td class="spam_message">{item.message_text.replace(chr(10), '<br>')}</td>
                     <td class="probability">
                         Имеет inline-клавиатуру: {item.has_reply_markup}<br>
                         Забанен CAS / LOLS: {max(item.cas, item.lols)}<br>

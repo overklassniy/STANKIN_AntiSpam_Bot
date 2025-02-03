@@ -27,7 +27,7 @@ def login():
     submit_login_button_text = 'Войти'
     remember_me_text = 'Запомните меня!'
     login_faq = 'Как получить доступ к панели управления анти&#8209;спам ботом?'
-    login_faq_answer = f'Используйте команду <a id="command" class="command-hidden animate" href="https://t.me/{config['BOT_NAME']}?start=get_password">/get_password</a> в чате с ботом.'
+    login_faq_answer = f'Используйте команду <a id="command" class="command-hidden animate" href="https://t.me/{config["BOT_NAME"]}?start=get_password">/get_password</a> в чате с ботом.'
 
     return render_template(
         'login.html',

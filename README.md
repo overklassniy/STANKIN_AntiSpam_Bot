@@ -63,6 +63,7 @@
    venv\Scripts\activate     # для Windows
 
    pip install --upgrade pip
+   pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
    pip install -r requirements.txt
    ```
 
@@ -93,6 +94,7 @@ helpdesk_email=почта_техподдержки
     "BERT_MODEL": "models/finetuned_rubert_tiny2",
     "BERT_THRESHOLD": 0.945,
     "ENABLE_CHATGPT": false,
+    "MUTING": true,
     "PANEL_PORT": 2222,
     "PERMANENT_SESSION_LIFETIME": 60,
     "REMEMBER_COOKIE_DURATION": 10080,
@@ -110,6 +112,7 @@ helpdesk_email=почта_техподдержки
 - `BERT_MODEL` – Путь к модели RuBERT, используемой для классификации сообщений.
 - `BERT_THRESHOLD` – Порог уверенности для классификации сообщения как спам (значение от 0 до 1).
 - `ENABLE_CHATGPT` – Флаг, включающий или отключающий использование ChatGPT для дополнительных оценок (true/false).
+- `MUTING` – Флаг, включающий последовательное ограничение пользователя. Пользователь теряет право отправлять сообщения и медиафайлы на 24 часа / 7 дней / навсегда, в зависимости от рецидива нарушения.
 - `PANEL_PORT` – Порт, на котором будет запущена веб-панель управления.
 - `PERMANENT_SESSION_LIFETIME` – Время жизни пользовательской сессии (в минутах).
 - `REMEMBER_COOKIE_DURATION` – Продолжительность действия опции "Запомнить меня" (в минутах).
@@ -127,6 +130,7 @@ helpdesk_email=почта_техподдержки
 flask --app panel.app init_db
 flask --app panel.app init_admin
 flask --app panel.app init_spam
+flask --app panel.app init_muted
 ```
 
 Эти команды:
