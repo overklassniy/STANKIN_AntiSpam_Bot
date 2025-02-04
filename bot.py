@@ -1,5 +1,6 @@
 import os
 import secrets
+import string
 from datetime import datetime
 
 from aiogram import Bot, Dispatcher, types, F
@@ -128,6 +129,9 @@ async def handle_get_password_command(message: types.Message) -> None:
             hashed_password = generate_password_hash(password, method='scrypt')
 
             if not user:
+                if not author_name:
+                    author_name = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(12))
+
                 user = User(
                     id=author_id,
                     name=author_name,

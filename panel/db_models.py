@@ -51,7 +51,7 @@ class SpamMessage(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     timestamp = db.Column(db.Float, nullable=False)
     author_id = db.Column(db.BigInteger, nullable=False)
-    author_username = db.Column(db.String(255), nullable=False)
+    author_username = db.Column(db.String(255), nullable=True)
     message_text = db.Column(db.Text, nullable=False)
     has_reply_markup = db.Column(db.Boolean, default=False)
     cas = db.Column(db.Boolean, default=False)
@@ -83,7 +83,7 @@ class MutedUser(db.Model):
         relapse_number (int, optional): Номер рецидива (по умолчанию 0).
     """
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(255), nullable=False)
+    username = db.Column(db.String(255), nullable=True)
     timestamp = db.Column(db.Float, nullable=False)
     muted_till_timestamp = db.Column(db.Float, nullable=False)
     relapse_number = db.Column(db.Integer, nullable=True, default=0)
