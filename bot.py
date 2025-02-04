@@ -194,7 +194,7 @@ async def handle_message(message: types.Message) -> None:
 
         # Получаем информацию о пользователе в чате
         author_chat_member = await bot.get_chat_member(chat_id=chat_id, user_id=author_id)
-        sent_by_admin = int((author_chat_member.status in ["administrator", "creator"]) or (author_id == 777000))
+        sent_by_admin = int((author_chat_member.status in ["administrator", "creator"]) or (author_id in [777000, 1087968824]))
         logger.debug(f"Статус пользователя {author_id} в чате {chat_id}: {author_chat_member.status}")
 
         # В тестовом режиме админские сообщения обрабатываются
@@ -280,7 +280,6 @@ async def handle_message(message: types.Message) -> None:
                         mute = types.ChatPermissions(can_send_messages=False)
 
                         if not muted_user_db:
-                            username = author_name
                             until_date = add_hours_get_timestamp(24)
                             muted_user_db = MutedUser(id=author_id, username=author_name, timestamp=result_dict["timestamp"], muted_till_timestamp=until_date, relapse_number=1)
                             db.session.add(muted_user_db)
