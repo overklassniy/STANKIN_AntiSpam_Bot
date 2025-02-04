@@ -197,6 +197,8 @@ python run_panel.py
 
 ```
 .
+├── .info/
+│   └── ascii-art.txt
 ├── data/
 │   ├── dataset.json
 │   ├── dataset_discord.json

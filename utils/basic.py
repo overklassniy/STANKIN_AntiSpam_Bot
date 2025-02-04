@@ -48,6 +48,12 @@ def setup_logger() -> logging.Logger:
 
         logger_obj.addHandler(file_handler)
         logger_obj.addHandler(console_handler)
+
+        ascii_art_path = ".info/ascii-art.txt"
+        if os.path.exists(ascii_art_path):
+            with open(ascii_art_path, "r", encoding="utf-8") as file:
+                print(file.read())
+
         logger_obj.info("Логгер успешно настроен. Логи записываются в файл: %s", log_file_name)
     else:
         logger_obj.info("Логгер уже настроен ранее.")
