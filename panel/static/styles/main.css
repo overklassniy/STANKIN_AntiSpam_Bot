@@ -208,6 +208,32 @@ td {
     }
 }
 
+@media (max-width: 1750px) {
+    header > nav > .main-menu {
+        font-size: 14pt;
+    }
+}
+
+@media (max-width: 1550px) {
+    header > nav > .main-menu {
+        font-size: 14pt;
+    }
+
+    header > nav > .logo {
+        font-size: 16pt;
+    }
+
+    #table_header {
+        font-size: 16pt;
+    }
+}
+
+@media (max-width: 1450px) {
+    header > nav > .main-menu {
+        font-size: 12pt;
+    }
+}
+
 @media (max-width: 1350px) {
     header > nav > .main-menu {
         display: none;
@@ -250,5 +276,15 @@ td {
         width: 100%;
         overflow-x: auto;
         -webkit-overflow-scrolling: touch; /* для плавного скроллинга на iOS */
+    }
+}
+
+@media (max-width: 381px) {
+    header > nav > .logo {
+        font-size: 14pt;
+    }
+
+    #table_header {
+        font-size: 14pt;
     }
 }

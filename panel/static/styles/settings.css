@@ -220,3 +220,68 @@ input[type=number] {
     text-wrap: balance;
     text-align: center;
 }
+
+
+@media (max-width: 1050px) {
+    form {
+        margin-left: auto;
+        margin-right: auto;
+        padding-left: 0;
+    }
+}
+
+@media (max-width: 701px) {
+    header {
+        margin: 1rem;
+    }
+
+    .container {
+        margin: 1rem;
+    }
+
+    .form-group {
+        grid-template-columns: 15rem 18rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .form-group {
+        grid-template-columns: 12rem 18rem;
+    }
+}
+
+@media (max-width: 526px) {
+    .form-group {
+        grid-template-columns: 9rem 18rem;
+    }
+}
+
+@media (max-width: 471px) {
+    .form-group {
+        grid-template-columns: 9rem 12rem;
+    }
+}
+
+@media (max-width: 411px) {
+    header > nav > .logo {
+        font-size: 16pt;
+    }
+
+    #table_header {
+        font-size: 16pt;
+    }
+}
+
+@media (max-width: 381px) {
+    header > nav > .logo {
+        font-size: 14pt;
+    }
+
+    #table_header {
+        font-size: 14pt;
+    }
+
+    .form-group {
+        grid-template-columns: 9rem 9rem;
+    }
+}

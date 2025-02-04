@@ -140,6 +140,9 @@ def create_app() -> Flask:
         """
         try:
             test_muted_user = MutedUser(
+                id=1234567890,
+                username='test_user',
+                timestamp=datetime.now().timestamp(),
                 muted_till_timestamp=4102455600  # Примерное время в будущем
             )
             db.session.add(test_muted_user)

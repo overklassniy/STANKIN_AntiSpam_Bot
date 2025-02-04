@@ -43,7 +43,7 @@
 </header>
 
 <div class="container">
-    <h1 id="table_header">{{ detected_spam_text_table }}</h1>
+    <h1 id="table_header">{{ muted_users_text_table }}</h1>
     <div class="table-responsive">
         <table>
             <thead>
@@ -51,8 +51,8 @@
                 <th>{{ date_text }}</th>
                 <th>{{ id_text }}</th>
                 <th>{{ username_text }}</th>
-                <th>{{ spam_text }}</th>
-                <th>{{ probability_text }}</th>
+                <th>{{ muted_till_text }}</th>
+                <th>{{ relapse_number_text }}</th>
             </tr>
             </thead>
             <tbody>
@@ -69,7 +69,7 @@
 
         <!-- Номера страниц -->
         {% for page_num in range(1, total_pages + 1) %}
-            <a href="{{ url_for('main.index', page=page_num) }}" class="pagination-link animate {% if page_num == current_page %}active{% endif %}">
+            <a href="{{ url_for('main.muted', page=page_num) }}" class="pagination-link animate {% if page_num == current_page %}active{% endif %}">
                 {{ page_num }}
             </a>
         {% endfor %}
