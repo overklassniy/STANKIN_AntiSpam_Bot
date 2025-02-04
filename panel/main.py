@@ -1,14 +1,14 @@
 import json
 import os
 import sys
-from datetime import datetime
+from datetime import datetime, UTC
 from typing import Any
 
 from flask import Blueprint, render_template, redirect, url_for, request, flash
 from flask_login import login_required, current_user
 
 from panel.app import title, icon_path, background_path, root_css_path
-from panel.db_models import SpamMessage
+from panel.db_models import SpamMessage, MutedUser
 
 sys.path.append("..")
 from utils.basic import config, logger, plural_form
@@ -23,8 +23,12 @@ hamburger_js_path = '/static/scripts/hamburger.js'
 
 about_text = 'О системе'
 detected_spam_text = 'Обнаруженный спам'
+muted_users_text = 'Ограниченные пользователи'
 settings_text = 'Настройки'
 logout_text = 'Выйти'
+
+prev_text = 'Предыдущая'
+next_text = 'Следующая'
 
 helpdesk_email = os.getenv('helpdesk_email')
 github_url = 'https://github.com/overklassniy/STANKIN_AntiSpam_Bot/'
@@ -47,8 +51,6 @@ def index() -> str:
     username_text = 'Имя пользователя'
     spam_text = 'Текст сообщения'
     probability_text = 'Критерии'
-    prev_text = 'Предыдущая'
-    next_text = 'Следующая'
 
     # Настройки пагинации
     per_page = config['PER_PAGE']  # Количество записей на странице
@@ -105,6 +107,7 @@ def index() -> str:
         github_url=github_url,
         about_text=about_text,
         detected_spam_text=detected_spam_text,
+        muted_users_text=muted_users_text,
         settings_text=settings_text,
         logout_text=logout_text,
         detected_spam_text_table=detected_spam_text_table,
@@ -167,6 +170,7 @@ def settings() -> str:
         github_url=github_url,
         about_text=about_text,
         detected_spam_text=detected_spam_text,
+        muted_users_text=muted_users_text,
         settings_text=settings_text,
         logout_text=logout_text,
         fields=fields,
@@ -237,3 +241,93 @@ def settings_post() -> Any:
 
     logger.info("Перенаправление пользователя обратно на страницу настроек.")
     return redirect(url_for('main.settings'))
+
+
+@main_bp.route('/muted')
+@login_required
+def muted() -> str:
+    """
+    Формирует страницу со списком ограниченных пользователей.
+
+    Возвращает:
+        str: Сформированное HTML-содержимое страницы.
+    """
+    logger.info('Обработка запроса главной страницы "/".')
+
+    og_description = 'Ограниченные пользователи'
+    id_text = 'ID пользователя'
+    username_text = 'Имя пользователя'
+    date_text = 'Дата ограничения'
+    muted_till_text = 'Дата снятия ограничения'
+    relapse_number_text = 'Количество нарушений'
+
+    # Настройки пагинации
+    per_page = config['PER_PAGE']  # Количество записей на странице
+    page = request.args.get('page', 1, type=int)  # Номер текущей страницы (по умолчанию 1)
+    logger.debug("Настроена пагинация: страница %s, записей на странице %s.", page, per_page)
+
+    # Запрос с пагинацией
+    muted_users_list = MutedUser.query.order_by(MutedUser.timestamp.desc()).paginate(
+        page=page, per_page=per_page, error_out=False
+    )
+    count = muted_users_list.total
+    logger.info("Получено %s ограниченных пользователей из базы данных.", count)
+
+    rows = ""
+    for item in muted_users_list.items:
+        date = datetime.fromtimestamp(item.timestamp).strftime("%d.%m.%Y<br>%H:%M:%S")
+        muted_till = datetime.fromtimestamp(item.muted_till_timestamp, UTC).strftime("%d.%m.%Y<br>%H:%M:%S")
+        rows += f"""
+                <tr>
+                    <td class="date">{date}</td>
+                    <td>{item.id}</td>
+                    <td>{item.username or 'N/A'}</td>
+                    <td class="date">{muted_till}</td>
+                    <td>{item.relapse_number}</td>
+                </tr>
+            """
+    muted_users_text_table = f'Ограниченных пользователей: {count} (показываются {per_page})'
+    logger.debug("Сформирована таблица из %s ограниченных пользователей", count)
+
+    # Навигация по страницам
+    prev_url = url_for('main.muted', page=muted_users_list.prev_num) if muted_users_list.has_prev else None
+    next_url = url_for('main.muted', page=muted_users_list.next_num) if muted_users_list.has_next else None
+    total_pages = muted_users_list.pages  # Общее количество страниц
+    current_page = muted_users_list.page  # Текущая страница
+
+    logger.info("Пагинация: страница %s из %s.", current_page, total_pages)
+
+    rendered_page = render_template(
+        'muted.html',
+        root_css_path=root_css_path,
+        main_css_path=main_css_path,
+        hamburger_js_path=hamburger_js_path,
+
+        icon_path=icon_path,
+        background_path=background_path,
+
+        og_title=title,
+        og_description=og_description,
+        title=title,
+        github_url=github_url,
+        about_text=about_text,
+        detected_spam_text=detected_spam_text,
+        muted_users_text=muted_users_text,
+        settings_text=settings_text,
+        logout_text=logout_text,
+        muted_users_text_table=muted_users_text_table,
+        date_text=date_text,
+        id_text=id_text,
+        username_text=username_text,
+        muted_till_text=muted_till_text,
+        relapse_number_text=relapse_number_text,
+        rows=rows,
+        prev_url=prev_url,
+        prev_text=prev_text,
+        next_url=next_url,
+        next_text=next_text,
+        total_pages=total_pages,
+        current_page=current_page
+    )
+    logger.info("Главная страница успешно сформирована.")
+    return rendered_page

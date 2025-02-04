@@ -83,6 +83,8 @@ class MutedUser(db.Model):
         relapse_number (int, optional): Номер рецидива (по умолчанию 0).
     """
     id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(255), nullable=False)
+    timestamp = db.Column(db.Float, nullable=False)
     muted_till_timestamp = db.Column(db.Float, nullable=False)
     relapse_number = db.Column(db.Integer, nullable=True, default=0)
 
@@ -97,4 +99,4 @@ class MutedUser(db.Model):
         """
         Возвращает строковое представление объекта ограниченного пользователя.
         """
-        return f"<MutedUser {self.id}, заблокирован до {self.muted_till_timestamp}, рецидивов: {self.relapse_number}>"
+        return f"<MutedUser {self.username} ({self.id}), заблокирован до {self.muted_till_timestamp}, рецидивов: {self.relapse_number}>"

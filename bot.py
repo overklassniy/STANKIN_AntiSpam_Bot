@@ -222,9 +222,9 @@ async def handle_message(message: types.Message) -> None:
         chatgpt_prediction = None
         if config['ENABLE_CHATGPT'] and os.getenv('OPENAI_API_KEY'):
             chatgpt_prediction = await chatgpt_predict(message_text)
-            logger.debug(f"ChatGPT предикция для пользователя {author_id}: {chatgpt_prediction}")
+            logger.debug(f"ChatGPT предикт для пользователя {author_id}: {chatgpt_prediction}")
         bert_prediction = bert_predict(message_text, config["BERT_THRESHOLD"])
-        logger.debug(f"BERT предикция для пользователя {author_id}: {bert_prediction}")
+        logger.debug(f"BERT предикт для пользователя {author_id}: {bert_prediction}")
 
         if not testing:
             # Определяем, является ли сообщение спамом
@@ -280,8 +280,9 @@ async def handle_message(message: types.Message) -> None:
                         mute = types.ChatPermissions(can_send_messages=False)
 
                         if not muted_user_db:
+                            username = author_name
                             until_date = add_hours_get_timestamp(24)
-                            muted_user_db = MutedUser(id=author_id, muted_till_timestamp=until_date, relapse_number=1)
+                            muted_user_db = MutedUser(id=author_id, username=author_name, timestamp=result_dict["timestamp"], muted_till_timestamp=until_date, relapse_number=1)
                             db.session.add(muted_user_db)
                             logger.info(f"Создана новая запись о мьюте для пользователя {author_id}")
                         else:
