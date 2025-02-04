@@ -1,11 +1,14 @@
 import json
+import os
 import pickle
-from typing import Union, Tuple, List, Any
+from typing import Tuple, List, Any
 
 import pandas as pd
 from dotenv import load_dotenv
 from openai import OpenAI
 from scipy.sparse import hstack
+
+os.environ["TRANSFORMERS_VERBOSITY"] = "error"
 from transformers import pipeline
 
 from basic import config, get_pkl_files, logger
