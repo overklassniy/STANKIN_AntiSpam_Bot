@@ -1,5 +1,7 @@
 # Анти-спам система
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/e422b6595c0f4261bf30e844bbf70283)](https://app.codacy.com/gh/overklassniy/STANKIN_AntiSpam_Bot?utm_source=github.com&utm_medium=referral&utm_content=overklassniy/STANKIN_AntiSpam_Bot&utm_campaign=Badge_Grade)
+
 Данный проект представляет собой комплексное решение для борьбы со спамом. Он включает в себя сбор и анализ данных, обучение различных моделей для обнаружения спама, интеграцию с Telegram через бота и разработку веб-панели для управления и мониторинга системы. Проект объединяет в себе возможности машинного обучения, автоматизации и веб-разработки, что позволяет эффективно выявлять спамовые сообщения и оперативно реагировать на них.
 
 ---
