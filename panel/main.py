@@ -7,7 +7,7 @@ from typing import Any
 from flask import Blueprint, render_template, redirect, url_for, request, flash
 from flask_login import login_required, current_user
 
-from panel.app import title, icon_path, background_path, root_css_path
+from panel.app import title, icon_path, background_path, root_css_path, main_css_path, hamburger_js_path
 from panel.db_models import SpamMessage, MutedUser
 
 sys.path.append("..")
@@ -17,21 +17,20 @@ from utils.config_web import prepare_fields
 main_bp = Blueprint('main', __name__)
 
 # Пути к статическим ресурсам
-main_css_path = '/static/styles/main.css'
-settings_css_path = '/static/styles/settings.css'
-hamburger_js_path = '/static/scripts/hamburger.js'
-
 about_text = 'О системе'
 detected_spam_text = 'Обнаруженный спам'
 muted_users_text = 'Ограниченные пользователи'
 settings_text = 'Настройки'
 logout_text = 'Выйти'
 
+github_url = 'https://github.com/overklassniy/STANKIN_AntiSpam_Bot/'
+
+settings_css_path = '/static/styles/settings.css'
+
 prev_text = 'Предыдущая'
 next_text = 'Следующая'
 
 helpdesk_email = os.getenv('helpdesk_email')
-github_url = 'https://github.com/overklassniy/STANKIN_AntiSpam_Bot/'
 
 
 @main_bp.route('/')
