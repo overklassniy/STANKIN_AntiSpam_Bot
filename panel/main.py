@@ -74,9 +74,9 @@ def index() -> str:
                     <td>{item.author_username or 'N/A'}</td>
                     <td class="spam_message">{item.message_text.replace(chr(10), '<br>')}</td>
                     <td class="probability">
-                        Имеет inline-клавиатуру: {item.has_reply_markup}<br>
-                        Забанен CAS / LOLS: {max(item.cas, item.lols)}<br>
-                        Вердикт ChatGPT: {0 if not item.chatgpt_prediction else item.chatgpt_prediction}<br>
+                        Имеет inline-клавиатуру: {'Да' if item.has_reply_markup else 'Нет'}<br>
+                        Забанен CAS / LOLS: {'Да' if max(item.cas, item.lols) else 'Нет'}<br>
+                        Вердикт ChatGPT: {"Отключён" if not item.chatgpt_prediction else item.chatgpt_prediction}<br>
                         Вердикт RuBert: {item.bert_prediction}
                     </td>
                 </tr>
