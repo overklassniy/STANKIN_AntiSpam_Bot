@@ -4,14 +4,14 @@ from datetime import timedelta, datetime
 from typing import Any, Optional
 
 from dotenv import load_dotenv
-from flask import Flask, session, redirect, url_for, request
+from flask import Flask, session, redirect, url_for, request, render_template
 from flask_login import LoginManager
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash
 
 # Добавляем путь для импорта утилит
-sys.path.append("utils")
-from basic import config, logger
+sys.path.append("..")
+from utils.basic import config, logger
 
 # Загрузка переменных окружения
 load_dotenv()
@@ -27,12 +27,17 @@ als_font_path = '/static/font/cunia.otf'
 als_bold_font_path = '/static/font/FuturaRoundBold.ttf'
 title = 'СТАНКИН Анти-Спам'
 
+main_css_path = '/static/styles/main.css'
+hamburger_js_path = '/static/scripts/hamburger.js'
+
+exception_css_path = '/static/styles/exception.css'
+
 
 def create_app() -> Flask:
     """
     Создаёт и настраивает экземпляр приложения Flask.
     """
-    app: Flask = Flask(__name__)
+    app = Flask(__name__)
 
     # Включение режима отладки, если тестирование активно
     if config['TESTING']:
@@ -180,6 +185,32 @@ def create_app() -> Flask:
         Обрабатывает ситуацию, когда требуется обновление сессии пользователя.
         """
         return redirect(url_for('auth.login'))
+
+    @app.errorhandler(Exception)
+    def page_not_found(e):
+        """
+        Вывод кастомной страницы ошибки.
+        """
+
+        og_description = 'Упс!'
+        oops_text = 'Упс! Что-то пошло не так...<br>Возможно, вы заблудились?'
+        back_button_text = 'На главную'
+
+        return render_template(
+            'exception.html',
+            root_css_path=root_css_path,
+            main_css_path=main_css_path,
+            exception_css_path=exception_css_path,
+
+            icon_path=icon_path,
+            background_path=background_path,
+
+            og_title=title,
+            og_description=og_description,
+            title=title,
+            oops_text=oops_text,
+            back_button_text=back_button_text
+        ), 404
 
     # Регистрация блюпринтов
     try:

@@ -11,8 +11,8 @@ from scipy.sparse import hstack
 os.environ["TRANSFORMERS_VERBOSITY"] = "error"
 from transformers import pipeline
 
-from basic import config, get_pkl_files, logger
-from preprocessing import (
+from utils.basic import config, get_pkl_files, logger
+from utils.preprocessing import (
     preprocess_text,
     count_emojis,
     count_newlines,

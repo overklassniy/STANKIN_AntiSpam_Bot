@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="{{ icon_path }}">
+    <meta property="og:title" content="{{ og_title }}">
+    <meta property="og:description" content="{{ og_description }}">
+    <meta property="og:image" content="{{ icon_path }}">
+    <meta name="theme-color" content="#6491F0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <link rel="stylesheet" href="{{ root_css_path }}">
+    <link rel="stylesheet" href="{{ main_css_path }}">
+    <link rel="stylesheet" href="{{ exception_css_path }}">
+    <script type="text/javascript" src="{{ hamburger_js_path }}"></script>
+</head>
+<body>
+<img class="background" src="{{ background_path }}" alt="Фон">
+<div class="container">
+    <div class="center">
+        <h1>{{ oops_text | safe }}</h1>
+        <button onclick="location.href='/';" class="secolor noselect">{{ back_button_text }}</button>
+    </div>
+</div>
+</body>
+</html>
