@@ -226,6 +226,10 @@ td {
     #table_header {
         font-size: 16pt;
     }
+
+    th {
+        font-size: 15pt;
+    }
 }
 
 @media (max-width: 1450px) {
@@ -279,6 +283,24 @@ td {
     }
 }
 
+@media (max-width: 701px) {
+    header {
+        margin: 1rem;
+    }
+
+    .container {
+        margin: 1rem;
+    }
+
+    table {
+        margin-left: 0;
+    }
+
+    td {
+        font-size: 10pt;
+    }
+}
+
 @media (max-width: 381px) {
     header > nav > .logo {
         font-size: 14pt;
@@ -286,5 +308,13 @@ td {
 
     #table_header {
         font-size: 14pt;
+    }
+
+    th {
+        font-size: 13pt;
+    }
+
+    td {
+        font-size: 8.5pt;
     }
 }
