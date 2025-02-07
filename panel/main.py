@@ -66,6 +66,15 @@ def index() -> str:
     rows = ""
     for item in detected_spam_list.items:
         date = datetime.fromtimestamp(item.timestamp).strftime("%d.%m.%Y<br>%H:%M:%S")
+        reply_markup_check = item.has_reply_markup
+        reply_markup_check = 'Да' if reply_markup_check else 'Нет' if reply_markup_check is False else 'Отключено'
+        if item.cas is None and item.lols is None:
+            cas_lols_check = None
+        else:
+            cas_lols_check = bool(item.cas or item.lols)
+        cas_lols_check = 'Да' if cas_lols_check else 'Нет' if cas_lols_check is False else 'Отключено'
+        chatgpt_prediction = item.chatgpt_prediction
+        chatgpt_prediction = 'Да' if chatgpt_prediction else 'Нет' if chatgpt_prediction is False else 'Отключено'
         rows += f"""
                 <tr>
                     <td class="date">{date}</td>
@@ -73,9 +82,9 @@ def index() -> str:
                     <td>{item.author_username or 'N/A'}</td>
                     <td class="spam_message">{item.message_text.replace(chr(10), '<br>')}</td>
                     <td class="probability">
-                        Имеет inline-клавиатуру: {'Да' if item.has_reply_markup else 'Нет'}<br>
-                        Забанен CAS / LOLS: {'Да' if max(item.cas, item.lols) else 'Нет'}<br>
-                        Вердикт ChatGPT: {"Отключён" if not item.chatgpt_prediction else item.chatgpt_prediction}<br>
+                        Имеет inline-клавиатуру: {reply_markup_check}<br>
+                        Забанен CAS / LOLS: {cas_lols_check}<br>
+                        Вердикт ChatGPT: {chatgpt_prediction}<br>
                         Вердикт RuBert: {item.bert_prediction}
                     </td>
                 </tr>

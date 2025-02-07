@@ -198,7 +198,7 @@ async def handle_message(message: types.Message) -> None:
 
         # Получаем информацию о пользователе в чате
         author_chat_member = await bot.get_chat_member(chat_id=chat_id, user_id=author_id)
-        sent_by_admin = int((author_chat_member.status in ["administrator", "creator"]) or (author_id in [777000, 1087968824]))
+        sent_by_admin = int((author_chat_member.status in ["administrator", "creator"]) or (author_id in [777000, 1087968824])) - 1
         logger.debug(f"Статус пользователя {author_id} в чате {chat_id}: {author_chat_member.status}")
 
         # В тестовом режиме админские сообщения обрабатываются
@@ -216,11 +216,11 @@ async def handle_message(message: types.Message) -> None:
             return None
 
         # Проверяем наличие inline клавиатуры (reply_markup)
-        has_reply_markup = int(bool(message.reply_markup))
+        has_reply_markup = bool(message.reply_markup) if config['CHECK_REPLY_MARKUP'] else None
 
         # Получаем данные по кастомным API для проверки спама
-        cas_banned = get_cas(author_id)
-        lols_banned = get_lols(author_id)
+        cas_banned = get_cas(author_id) if config["CHECK_CAS"] else None
+        lols_banned = get_lols(author_id) if config["CHECK_LOLS"] else None
 
         # Предикты моделей (ChatGPT и BERT)
         chatgpt_prediction = None
@@ -273,11 +273,12 @@ async def handle_message(message: types.Message) -> None:
                 logger.info(f"Запись о спаме добавлена в БД для пользователя {author_id}")
 
             # Удаляем спам-сообщение
-            await message.delete()
-            logger.info(f"Сообщение от {author_id} удалено")
+            if config["ENABLE_DELETING"]:
+                await message.delete()
+                logger.info(f"Сообщение от {author_id} удалено")
 
             # Если включён мьютинг, ограничиваем права пользователя в чате
-            if config['MUTING']:
+            if config['ENABLE_MUTING']:
                 try:
                     with create_app().app_context():
                         muted_user_db = MutedUser.query.filter_by(id=author_id).first()

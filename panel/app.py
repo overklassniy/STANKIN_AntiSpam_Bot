@@ -186,8 +186,8 @@ def create_app() -> Flask:
         """
         return redirect(url_for('auth.login'))
 
-    @app.errorhandler(Exception)
-    def page_not_found(e):
+    @app.errorhandler(404)
+    def page_not_found():
         """
         Вывод кастомной страницы ошибки.
         """

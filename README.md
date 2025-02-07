@@ -24,6 +24,7 @@
   - [Основной скрипт](#основной-скрипт)
 - [Структура проекта](#структура-проекта)
 - [Поддержка](#поддержка)
+- [Технологии](#технологии)
 
 ---
 
@@ -95,8 +96,12 @@ helpdesk_email=почта_техподдержки
     "MODELS_DIR": "models",
     "BERT_MODEL": "models/finetuned_rubert_tiny2",
     "BERT_THRESHOLD": 0.945,
+    "CHECK_REPLY_MARKUP": true,
+    "CHECK_CAS": true,
+    "CHECK_LOLS": true,
     "ENABLE_CHATGPT": false,
-    "MUTING": true,
+    "ENABLE_DELETING": true,
+    "ENABLE_MUTING": false,
     "PANEL_PORT": 2222,
     "PERMANENT_SESSION_LIFETIME": 60,
     "REMEMBER_COOKIE_DURATION": 10080,
@@ -113,8 +118,12 @@ helpdesk_email=почта_техподдержки
 - `MODELS_DIR` – Путь к каталогу с обученными моделями.
 - `BERT_MODEL` – Путь к модели RuBERT, используемой для классификации сообщений.
 - `BERT_THRESHOLD` – Порог уверенности для классификации сообщения как спам (значение от 0 до 1).
+- `CHECK_REPLY_MARKUP` – Флаг, включающий проверку на вложенную клавиатуру.
+- `CHECK_CAS` – Флаг, включающий проверку в Combot Anti-Spam (CAS).
+- `CHECK_LOLS` – Флаг, включающий проверку в LOLS.
 - `ENABLE_CHATGPT` – Флаг, включающий или отключающий использование ChatGPT для дополнительных оценок (true/false).
-- `MUTING` – Флаг, включающий последовательное ограничение пользователя. Пользователь теряет право отправлять сообщения и медиафайлы на 24 часа / 7 дней / навсегда, в зависимости от рецидива нарушения.
+- `ENABLE_DELETING` – Флаг, включающий удаление рекламного сообщения.
+- `ENABLE_MUTING` – Флаг, включающий последовательное ограничение пользователя. Пользователь теряет право отправлять сообщения и медиафайлы на 24 часа / 7 дней / навсегда, в зависимости от рецидива нарушения.
 - `PANEL_PORT` – Порт, на котором будет запущена веб-панель управления.
 - `PERMANENT_SESSION_LIFETIME` – Время жизни пользовательской сессии (в минутах).
 - `REMEMBER_COOKIE_DURATION` – Продолжительность действия опции "Запомнить меня" (в минутах).
@@ -292,3 +301,22 @@ python run_panel.py
 ## Поддержка
 
 Если у вас возникли вопросы, предложения или вы хотите внести улучшения, пожалуйста, создавайте [Issues](https://github.com/overklassniy/STANKIN_AntiSpam_Bot/issues) и [Pull Requests](https://github.com/overklassniy/STANKIN_AntiSpam_Bot/pulls). Ваш вклад очень важен для развития проекта!
+
+---
+
+## Технологии
+
+- **[Python](https://github.com/python/cpython)** – основной язык разработки.
+- **[Aiogram (3.17.0)](https://github.com/aiogram/aiogram)** – асинхронный фреймворк для работы с Telegram Bot API, используемый для взаимодействия с пользователями в режиме реального времени.
+- **[Flask](https://github.com/pallets/flask)** – лёгкий веб-фреймворк, обеспечивающий создание API и интеграцию с другими сервисами.
+- **[Flask-SQLAlchemy](https://github.com/pallets-eco/flask-sqlalchemy/)** – ORM для работы с базой данных, позволяющая удобно управлять хранимыми данными.
+- **[Flask-Login](https://github.com/maxcountryman/flask-login)** – механизм аутентификации пользователей, необходимый для управления доступом к системе.
+- **[Pandas](https://github.com/pandas-dev/pandas)** – библиотека для обработки и анализа данных, используемая при анализе текстов и метаданных сообщений.
+- **[Scikit-learn](https://github.com/scikit-learn/scikit-learn)** – набор инструментов для машинного обучения, применяемый для построения и обучения моделей классификации спама.
+- **[Scipy](https://github.com/scipy/scipy)** – библиотека для работы с вычислениями, используемая в алгоритмах обработки данных.
+- **[Transformers (с поддержкой Torch)](https://github.com/huggingface/transformers)** – библиотека от Hugging Face для работы с моделями обработки естественного языка.
+- **[OpenAI](https://github.com/openai/openai-python)** – API для интеграции ChatGPT.
+- **[Emoji](https://github.com/carpedm20/emoji)** – библиотека для работы с эмодзи, позволяющая анализировать их использование в текстах сообщений.
+- **[Requests](https://github.com/psf/requests)** – инструмент для выполнения HTTP-запросов, необходимый для взаимодействия с API и внешними сервисами.
+- **[Python-dotenv](https://github.com/theskumar/python-dotenv)** – библиотека для загрузки конфигурационных переменных из `.env`-файлов, обеспечивающая удобное управление настройками проекта.
+- **[Waitress](https://github.com/Pylons/waitress)** – WSGI-сервер для развертывания веб-приложения на базе Flask в продакшене.

@@ -42,9 +42,9 @@ class SpamMessage(db.Model):
         author_id (int): Идентификатор автора сообщения.
         author_username (str): Имя пользователя автора сообщения.
         message_text (str): Текст сообщения.
-        has_reply_markup (bool): Наличие inline-клавиатуры.
-        cas (bool): Флаг, указывающий на бан в CAS.
-        lols (bool): Флаг, указывающий на бан в LOLS.
+        has_reply_markup (bool, optional): Наличие inline-клавиатуры.
+        cas (bool, optional): Флаг, указывающий на бан в CAS.
+        lols (bool, optional): Флаг, указывающий на бан в LOLS.
         chatgpt_prediction (float, optional): Вердикт ChatGPT.
         bert_prediction (float, optional): Вердикт RuBert.
     """
@@ -53,9 +53,9 @@ class SpamMessage(db.Model):
     author_id = db.Column(db.BigInteger, nullable=False)
     author_username = db.Column(db.String(255), nullable=True)
     message_text = db.Column(db.Text, nullable=False)
-    has_reply_markup = db.Column(db.Boolean, default=False)
-    cas = db.Column(db.Boolean, default=False)
-    lols = db.Column(db.Boolean, default=False)
+    has_reply_markup = db.Column(db.Boolean, nullable=True)
+    cas = db.Column(db.Boolean, nullable=True)
+    lols = db.Column(db.Boolean, nullable=True)
     chatgpt_prediction = db.Column(db.Float, nullable=True)
     bert_prediction = db.Column(db.Float, nullable=True)
 
