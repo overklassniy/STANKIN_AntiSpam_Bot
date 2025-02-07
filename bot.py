@@ -198,7 +198,7 @@ async def handle_message(message: types.Message) -> None:
 
         # Получаем информацию о пользователе в чате
         author_chat_member = await bot.get_chat_member(chat_id=chat_id, user_id=author_id)
-        sent_by_admin = int((author_chat_member.status in ["administrator", "creator"]) or (author_id in [777000, 1087968824])) - 1
+        sent_by_admin = int((author_chat_member.status in ["administrator", "creator"]) or (author_id in [777000, 1087968824]))
         logger.debug(f"Статус пользователя {author_id} в чате {chat_id}: {author_chat_member.status}")
 
         # В тестовом режиме админские сообщения обрабатываются
