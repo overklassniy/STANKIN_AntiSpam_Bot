@@ -196,6 +196,9 @@ td {
     color: white;
 }
 
+.btn-mobile {
+    display: none;
+}
 
 @keyframes slideDown {
     from {
@@ -298,6 +301,15 @@ td {
 
     td {
         font-size: 10pt;
+    }
+}
+
+@media screen and (max-width: 450px) {
+    .btn-text {
+        display: none;
+    }
+    .btn-mobile {
+        display: inline;
     }
 }
 
