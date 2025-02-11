@@ -296,6 +296,10 @@
 
 
 @media (max-width: 560px) {
+    body {
+        overflow-y: scroll;
+    }
+
     .container {
         height: 100%;
     }
