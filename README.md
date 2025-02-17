@@ -80,7 +80,7 @@ TEST_BOT_TOKEN=токен_тестового_бота_Telegram
 OPENAI_API_KEY=API_ключ_OpenAI
 SECRET_KEY=секретный_ключ_базы_данных
 ADMIN_PASSWORD=пароль_администратора
-helpdesk_email=почта_техподдержки
+HELPDESK_EMAIL=почта_техподдержки
 ```
 
 ### Настройка конфигурационного файла

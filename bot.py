@@ -40,7 +40,7 @@ dp = Dispatcher()
 bot_id = None
 
 # Получение адреса технической поддержки
-helpdesk_email = os.getenv('helpdesk_email')
+helpdesk_email = os.getenv('HELPDESK_EMAIL')
 if not helpdesk_email:
     logger.warning("E-mail технической поддержки не задан в переменных окружения")
 
