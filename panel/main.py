@@ -30,7 +30,7 @@ settings_css_path = '/static/styles/settings.css'
 prev_text = 'Предыдущая'
 next_text = 'Следующая'
 
-helpdesk_email = os.getenv('helpdesk_email')
+helpdesk_email = os.getenv('HELPDESK_EMAIL')
 
 
 @main_bp.route('/')
