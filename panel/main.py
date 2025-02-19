@@ -98,6 +98,17 @@ def index() -> str:
     total_pages = detected_spam_list.pages  # Общее количество страниц
     current_page = detected_spam_list.page  # Текущая страница
 
+    # Вычисление диапазона отображаемых страниц (максимум 5)
+    if total_pages <= 5:
+        pages = range(1, total_pages + 1)
+    else:
+        if current_page <= 3:
+            pages = range(1, 6)
+        elif current_page >= total_pages - 2:
+            pages = range(total_pages - 4, total_pages + 1)
+        else:
+            pages = range(current_page - 2, current_page + 3)
+
     logger.info("Пагинация: страница %s из %s.", current_page, total_pages)
 
     rendered_page = render_template(
@@ -130,7 +141,8 @@ def index() -> str:
         next_url=next_url,
         next_text=next_text,
         total_pages=total_pages,
-        current_page=current_page
+        current_page=current_page,
+        pages=pages
     )
     logger.info("Главная страница успешно сформирована.")
     return rendered_page
@@ -303,6 +315,17 @@ def muted() -> str:
     total_pages = muted_users_list.pages  # Общее количество страниц
     current_page = muted_users_list.page  # Текущая страница
 
+    # Вычисление диапазона отображаемых страниц (максимум 5)
+    if total_pages <= 5:
+        pages = range(1, total_pages + 1)
+    else:
+        if current_page <= 3:
+            pages = range(1, 6)
+        elif current_page >= total_pages - 2:
+            pages = range(total_pages - 4, total_pages + 1)
+        else:
+            pages = range(current_page - 2, current_page + 3)
+
     logger.info("Пагинация: страница %s из %s.", current_page, total_pages)
 
     rendered_page = render_template(
@@ -335,7 +358,8 @@ def muted() -> str:
         next_url=next_url,
         next_text=next_text,
         total_pages=total_pages,
-        current_page=current_page
+        current_page=current_page,
+        pages=pages
     )
     logger.info("Главная страница успешно сформирована.")
     return rendered_page
