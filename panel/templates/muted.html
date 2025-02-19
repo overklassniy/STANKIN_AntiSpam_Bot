@@ -68,7 +68,7 @@
         {% endif %}
 
         <!-- Номера страниц -->
-        {% for page_num in range(1, total_pages + 1) %}
+        {% for page_num in pages %}
             <a href="{{ url_for('main.muted', page=page_num) }}" class="pagination-link animate {% if page_num == current_page %}active{% endif %}">
                 {{ page_num }}
             </a>
