@@ -85,7 +85,7 @@ class MutedUser(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(255), nullable=True)
     timestamp = db.Column(db.Float, nullable=False)
-    muted_till_timestamp = db.Column(db.Float, nullable=False)
+    muted_till_timestamp = db.Column(db.Float, nullable=True)
     relapse_number = db.Column(db.Integer, nullable=True, default=0)
 
     def __init__(self, *args, **kwargs) -> None:

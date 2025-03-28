@@ -1,12 +1,13 @@
 import os
 import secrets
 import string
+from copy import copy
 from datetime import datetime
 
 from aiogram import Bot, Dispatcher, types, F
-from aiogram.enums import ChatType
+from aiogram.enums import ChatType, ParseMode
 from aiogram.filters import Command, CommandStart, CommandObject
-from aiogram.types import BotCommand
+from aiogram.types import BotCommand, InlineKeyboardButton, InlineKeyboardMarkup
 from dotenv import load_dotenv
 from werkzeug.security import generate_password_hash
 
@@ -93,7 +94,7 @@ async def handle_get_password_command(message: types.Message) -> None:
     author_name = author.username
 
     # Получаем идентификатор чата из конфига
-    chat_id = config.get("CHAT_ID")
+    chat_id = config.get("TARGET_CHAT_ID")
     try:
         author_chat_member = await bot.get_chat_member(chat_id=chat_id, user_id=author_id)
         logger.debug(f"Пользователь {author_id} является членом чата {chat_id} со статусом {author_chat_member.status}")
@@ -176,6 +177,59 @@ async def handle_private_message(message: types.Message) -> None:
         logger.error(f"Ошибка при отправке личного сообщения пользователю {message.from_user.id}: {e}")
 
 
+@dp.callback_query(lambda c: c.data.startswith("mute_user"))
+async def process_mute_user_callback(callback: types.CallbackQuery) -> None:
+    """
+    Обрабатывает нажатие на кнопку "Ограничить пользователя".
+    Из callback_data извлекается ID пользователя, затем:
+      - Получается или создается запись о пользователе в БД,
+      - Определяется новое время ограничения (в зависимости от количества нарушений),
+      - Применяется ограничение в чате,
+      - Исходное сообщение редактируется: удаляется клавиатура и добавляется строка с датой окончания ограничения.
+    """
+    try:
+        # Извлекаем user_id из callback_data. Ожидаем формат "mute_user:<user_id>"
+        parts = callback.data.split(":")
+        if len(parts) != 2:
+            await callback.answer("Неверные данные для ограничения!")
+            return
+
+        user_id = int(parts[1])
+        chat_id = config["TARGET_CHAT_ID"]
+        mute = types.ChatPermissions(can_send_messages=False)
+
+        # Работа с базой данных через контекст приложения
+        app = create_app()
+        with app.app_context():
+            muted_user_db = MutedUser.query.filter_by(id=user_id).first()
+            if muted_user_db.relapse_number == 1:
+                new_until_date = add_hours_get_timestamp(24)
+            elif muted_user_db.relapse_number == 2:
+                new_until_date = add_hours_get_timestamp(168)
+            else:
+                new_until_date = add_hours_get_timestamp(999)
+            muted_user_db.muted_till_timestamp = new_until_date
+            muted_user_db.timestamp = datetime.now().timestamp()
+            db.session.commit()
+
+        # Применяем ограничение для пользователя в чате
+        await bot.restrict_chat_member(chat_id=chat_id, user_id=user_id, permissions=mute, until_date=new_until_date)
+        date_untildate = datetime.fromtimestamp(new_until_date).strftime("%d.%m.%Y %H:%M:%S")
+
+        # Чтобы сохранить исходное форматирование, используем html-версию текста, если она доступна
+        original_text = getattr(callback.message, "html_text", callback.message.text)
+        new_text = original_text + f'\n<b>Ограничен до:</b> {date_untildate}'
+
+        # Редактируем сообщение, при этом inline-клавиатура удалится автоматически
+        await callback.message.edit_text(new_text, parse_mode=ParseMode.HTML)
+
+        await callback.answer("Пользователь ограничен!")
+        logger.info(f"Пользователь {user_id} ограничен до {date_untildate} (Рецидив №{muted_user_db.relapse_number})")
+    except Exception as e:
+        logger.error(f"Ошибка в обработчике mute_user: {e}")
+        await callback.answer("Ошибка при ограничении пользователя!")
+
+
 # Обработчик всех остальных сообщений
 @dp.message()
 async def handle_message(message: types.Message) -> None:
@@ -188,7 +242,7 @@ async def handle_message(message: types.Message) -> None:
     """
     global bot
 
-    chat_id = config.get("CHAT_ID")
+    chat_id = config["TARGET_CHAT_ID"]
     logger.info(f"Обработка сообщения от пользователя {message.from_user.id} в чате {chat_id}")
 
     try:
@@ -277,30 +331,73 @@ async def handle_message(message: types.Message) -> None:
                 await message.delete()
                 logger.info(f"Сообщение от {author_id} удалено")
 
-            # Если включён мьютинг, ограничиваем права пользователя в чате
-            if config['ENABLE_MUTING']:
-                try:
-                    with create_app().app_context():
-                        muted_user_db = MutedUser.query.filter_by(id=author_id).first()
-                        mute = types.ChatPermissions(can_send_messages=False)
+            enable_automuting = config['ENABLE_AUTOMUTING']
 
-                        if not muted_user_db:
-                            until_date = add_hours_get_timestamp(24)
-                            muted_user_db = MutedUser(id=author_id, username=author_name, timestamp=result_dict["timestamp"], muted_till_timestamp=until_date, relapse_number=1)
-                            db.session.add(muted_user_db)
-                            logger.info(f"Создана новая запись о мьюте для пользователя {author_id}")
-                        else:
-                            muted_user_db.relapse_number += 1
-                            until_date = add_hours_get_timestamp(168 if muted_user_db.relapse_number == 2 else 999)
-                            muted_user_db.muted_till_timestamp = until_date
-                            logger.info(f"Обновлена запись о мьюте для пользователя {author_id} (Рецидив №{muted_user_db.relapse_number})")
+            # Сохраняем запись о пользователе в базу данных
+            with create_app().app_context():
+                muted_user_db = MutedUser.query.filter_by(id=author_id).first()
+                mute = types.ChatPermissions(can_send_messages=False)
 
-                        db.session.commit()
-                        await bot.restrict_chat_member(chat_id=chat_id, user_id=author_id, permissions=mute, until_date=until_date)
-                        logger.info(f"Пользователь {author_id} замьючен до {until_date}")
-                except Exception as e:
-                    logger.error(f"Ошибка при мьюте пользователя {author_id}: {e}")
-                    db.session.rollback()
+                if not muted_user_db:
+                    if enable_automuting:
+                        until_date = add_hours_get_timestamp(24)
+                    else:
+                        until_date = None
+                    muted_user_db = MutedUser(id=author_id, username=author_name, timestamp=result_dict["timestamp"],
+                                              muted_till_timestamp=until_date, relapse_number=1)
+                    db.session.add(muted_user_db)
+                    logger.info(f"Создана новая запись о пользователе {author_id}")
+                else:
+                    muted_user_db.relapse_number += 1
+                    if enable_automuting:
+                        until_date = add_hours_get_timestamp(168 if muted_user_db.relapse_number == 2 else 999)
+                    else:
+                        until_date = None
+                    muted_user_db.muted_till_timestamp = until_date
+                    logger.info(f"Обновлена запись о пользователе {author_id} (Рецидив №{muted_user_db.relapse_number})")
+
+                relapses = copy(muted_user_db.relapse_number)
+
+                db.session.commit()
+
+            reply_markup_check = result_dict["has_reply_markup"]
+            notification_message = (
+                f'<b>Дата:</b> {datetime.fromtimestamp(result_dict["timestamp"]).strftime("%d.%m.%Y %H:%M:%S")}\n'
+                f'<b>ID пользователя:</b> <code>{author_id}</code>\n'
+                f'<b>Имя пользователя:</b> <code>{author_name}</code>\n'
+                f'<b>Текст сообщения:</b>\n<blockquote>{result_dict["message_text"]}</blockquote>\n'''
+                f'<b>Имеет inline-клавиатуру:</b> {"Да" if reply_markup_check else "Нет" if reply_markup_check is False else "Отключено"}\n'
+                f'<b>Вердикт RuBert:</b> <code>{round(result_dict["bert_prediction"][1][1], 7)}</code>\n'
+                f'<b>Количество нарушений:</b> {relapses}'
+            )
+            notification_chat_id = config['NOTIFICATION_CHAT_ID']
+            notification_chat_spam_thread = config['NOTIFICATION_CHAT_SPAM_THREAD']
+            # Если включён автомьютинг, ограничиваем права пользователя в чате
+            if enable_automuting:
+                await bot.restrict_chat_member(chat_id=chat_id, user_id=author_id, permissions=mute, until_date=until_date)
+                date_untildate = datetime.fromtimestamp(until_date).strftime("%d.%m.%Y %H:%M:%S")
+                logger.info(f"Пользователь {author_id} замьючен до {date_untildate}")
+                notification_message += f'\n<b>Ограничен до:</b> {date_untildate}'
+                await bot.send_message(
+                    chat_id=notification_chat_id,
+                    message_thread_id=notification_chat_spam_thread,
+                    text=notification_message,
+                    parse_mode=ParseMode.HTML
+                )
+                logger.info(f"Сообщение-уведомление без inline-клавиатуры было отправлено")
+            else:
+                mute_inline_kb_list = [
+                    [InlineKeyboardButton(text="🔨 Ограничить пользователя", callback_data=f"mute_user:{author_id}")]
+                ]
+                mute_keyboard = InlineKeyboardMarkup(inline_keyboard=mute_inline_kb_list)
+                await bot.send_message(
+                    chat_id=notification_chat_id,
+                    message_thread_id=notification_chat_spam_thread,
+                    text=notification_message,
+                    parse_mode=ParseMode.HTML,
+                    reply_markup=mute_keyboard
+                )
+                logger.info(f"Сообщение-уведомление с inline-клавиатурой было отправлено")
         else:
             # В тестовом режиме выводим диагностическую информацию
             cmodels_predictions = get_predictions(message_text)
