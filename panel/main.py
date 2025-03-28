@@ -79,7 +79,7 @@ def index() -> str:
                 <tr>
                     <td class="date">{date}</td>
                     <td>{item.author_id}</td>
-                    <td>{item.author_username or 'N/A'}</td>
+                    <td>{item.author_username or '—'}</td>
                     <td class="spam_message">{item.message_text.replace(chr(10), '<br>')}</td>
                     <td class="probability">
                         Имеет inline-клавиатуру: {reply_markup_check}<br>
@@ -296,12 +296,15 @@ def muted() -> str:
     rows = ""
     for item in muted_users_list.items:
         date = datetime.fromtimestamp(item.timestamp).strftime("%d.%m.%Y<br>%H:%M:%S")
-        muted_till = datetime.fromtimestamp(item.muted_till_timestamp, UTC).strftime("%d.%m.%Y<br>%H:%M:%S")
+        if item.muted_till_timestamp:
+            muted_till = datetime.fromtimestamp(item.muted_till_timestamp, UTC).strftime("%d.%m.%Y<br>%H:%M:%S")
+        else:
+            muted_till = '—'
         rows += f"""
                 <tr>
                     <td class="date">{date}</td>
                     <td>{item.id}</td>
-                    <td>{item.username or 'N/A'}</td>
+                    <td>{item.username or '—'}</td>
                     <td class="date">{muted_till}</td>
                     <td>{item.relapse_number}</td>
                 </tr>
