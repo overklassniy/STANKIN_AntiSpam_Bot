@@ -220,14 +220,56 @@ async def process_mute_user_callback(callback: types.CallbackQuery) -> None:
         original_text = getattr(callback.message, "html_text", callback.message.text)
         new_text = original_text + f'\n<b>Ограничен до:</b> {date_untildate}'
 
-        # Редактируем сообщение, при этом inline-клавиатура удалится автоматически
-        await callback.message.edit_text(new_text, parse_mode=ParseMode.HTML)
+        orig_kb = callback.message.reply_markup.inline_keyboard
+        new_kb_buttons = []
+        for row in orig_kb:
+            new_row = [btn for btn in row if not btn.callback_data.startswith("mute_user")]
+            if new_row:
+                new_kb_buttons.append(new_row)
+        new_markup = InlineKeyboardMarkup(inline_keyboard=new_kb_buttons)
+
+        # Редактируем сообщение
+        await callback.message.edit_text(new_text, parse_mode=ParseMode.HTML, reply_markup=new_markup)
 
         await callback.answer("Пользователь ограничен!")
         logger.info(f"Пользователь {user_id} ограничен до {date_untildate} (Рецидив №{muted_user_db.relapse_number})")
     except Exception as e:
         logger.error(f"Ошибка в обработчике mute_user: {e}")
         await callback.answer("Ошибка при ограничении пользователя!")
+
+
+@dp.callback_query(lambda c: c.data.startswith("delete_message"))
+async def process_delete_message_callback(callback: types.CallbackQuery) -> None:
+    parts = callback.data.split(":")
+    if len(parts) != 2:
+        await callback.answer("Неверные данные для удаления!")
+        return
+    msg_id = int(parts[1])
+    target_chat = config["TARGET_CHAT_ID"]
+
+    try:
+        await bot.delete_message(chat_id=target_chat, message_id=msg_id)
+
+        original_text = getattr(callback.message, "html_text", callback.message.text)
+        new_text = original_text + f'\n\n<i>Сообщение удалено вручную</i>'
+
+        # Удаляем кнопку "удалить", оставляем "ограничить", если она была
+        orig_kb = callback.message.reply_markup.inline_keyboard
+        new_kb_buttons = []
+        for row in orig_kb:
+            new_row = [btn for btn in row if not btn.callback_data.startswith("delete_message")]
+            if new_row:
+                new_kb_buttons.append(new_row)
+        new_markup = InlineKeyboardMarkup(inline_keyboard=new_kb_buttons)
+
+        # Редактируем сообщение
+        await callback.message.edit_text(new_text, parse_mode=ParseMode.HTML, reply_markup=new_markup)
+
+        await callback.answer("Сообщение удалено!")
+        logger.info(f"Сообщение {msg_id} удалено из чата {target_chat}")
+    except Exception as e:
+        logger.error(f"Ошибка при удалении сообщения: {e}")
+        await callback.answer("Не удалось удалить сообщение!")
 
 
 # Обработчик всех остальных сообщений
@@ -243,7 +285,7 @@ async def handle_message(message: types.Message) -> None:
     global bot
 
     chat_id = config["TARGET_CHAT_ID"]
-    logger.info(f"Обработка сообщения от пользователя {message.from_user.id} в чате {chat_id}")
+    logger.info(f"Обработка сообщения {message.text}\nот пользователя {message.from_user.id} в чате {chat_id}")
 
     try:
         author = message.from_user
@@ -284,133 +326,142 @@ async def handle_message(message: types.Message) -> None:
         bert_prediction = bert_predict(message_text, config["BERT_THRESHOLD"])
         logger.debug(f"BERT предикт для пользователя {author_id}: {bert_prediction}")
 
-        if not testing:
-            # Определяем, является ли сообщение спамом
-            is_spam = False
-            if has_reply_markup or cas_banned or lols_banned or chatgpt_prediction or bert_prediction[0]:
-                is_spam = True
-                logger.info(f"Сообщение от {author_id} идентифицировано как спам")
-
-            if not is_spam:
-                logger.debug(f"Сообщение от {author_id} не считается спамом")
-                return None
-
-            # Формируем словарь с данными для записи в базу
-            result_dict = {
-                "timestamp": datetime.now().timestamp(),
-                "author_id": author_id,
-                "author_username": author_name,
-                "message_text": message_text,
-                "has_reply_markup": has_reply_markup,
-                "cas": cas_banned,
-                "lols": lols_banned,
-                "chatgpt_prediction": chatgpt_prediction,
-                "bert_prediction": bert_prediction
-            }
-
-            # Создаем запись о спаме
-            new_spam = SpamMessage(
-                timestamp=result_dict["timestamp"],
-                author_id=result_dict["author_id"],
-                author_username=result_dict["author_username"],
-                message_text=result_dict["message_text"],
-                has_reply_markup=result_dict["has_reply_markup"],
-                cas=result_dict["cas"],
-                lols=result_dict["lols"],
-                chatgpt_prediction=result_dict.get("chatgpt_prediction", 0),
-                bert_prediction=round(result_dict["bert_prediction"][1][1], 7)
-            )
-            # Сохраняем запись в базу данных
-            with create_app().app_context():
-                db.session.add(new_spam)
-                db.session.commit()
-                logger.info(f"Запись о спаме добавлена в БД для пользователя {author_id}")
-
-            # Удаляем спам-сообщение
-            if config["ENABLE_DELETING"]:
-                await message.delete()
-                logger.info(f"Сообщение от {author_id} удалено")
-
-            enable_automuting = config['ENABLE_AUTOMUTING']
-
-            # Сохраняем запись о пользователе в базу данных
-            with create_app().app_context():
-                muted_user_db = MutedUser.query.filter_by(id=author_id).first()
-                mute = types.ChatPermissions(can_send_messages=False)
-
-                if not muted_user_db:
-                    if enable_automuting:
-                        until_date = add_hours_get_timestamp(24)
-                    else:
-                        until_date = None
-                    muted_user_db = MutedUser(id=author_id, username=author_name, timestamp=result_dict["timestamp"],
-                                              muted_till_timestamp=until_date, relapse_number=1)
-                    db.session.add(muted_user_db)
-                    logger.info(f"Создана новая запись о пользователе {author_id}")
-                else:
-                    muted_user_db.relapse_number += 1
-                    if enable_automuting:
-                        until_date = add_hours_get_timestamp(168 if muted_user_db.relapse_number == 2 else 999)
-                    else:
-                        until_date = None
-                    muted_user_db.muted_till_timestamp = until_date
-                    logger.info(f"Обновлена запись о пользователе {author_id} (Рецидив №{muted_user_db.relapse_number})")
-
-                relapses = copy(muted_user_db.relapse_number)
-
-                db.session.commit()
-
-            reply_markup_check = result_dict["has_reply_markup"]
-            notification_message = (
-                f'<b>Дата:</b> {datetime.fromtimestamp(result_dict["timestamp"]).strftime("%d.%m.%Y %H:%M:%S")}\n'
-                f'<b>ID пользователя:</b> <code>{author_id}</code>\n'
-                f'<b>Имя пользователя:</b> <code>{author_name}</code>\n'
-                f'<b>Текст сообщения:</b>\n<blockquote>{result_dict["message_text"]}</blockquote>\n'''
-                f'<b>Имеет inline-клавиатуру:</b> {"Да" if reply_markup_check else "Нет" if reply_markup_check is False else "Отключено"}\n'
-                f'<b>Вердикт RuBert:</b> <code>{round(result_dict["bert_prediction"][1][1], 7)}</code>\n'
-                f'<b>Количество нарушений:</b> {relapses}'
-            )
-            notification_chat_id = config['NOTIFICATION_CHAT_ID']
-            notification_chat_spam_thread = config['NOTIFICATION_CHAT_SPAM_THREAD']
-            # Если включён автомьютинг, ограничиваем права пользователя в чате
-            if enable_automuting:
-                await bot.restrict_chat_member(chat_id=chat_id, user_id=author_id, permissions=mute, until_date=until_date)
-                date_untildate = datetime.fromtimestamp(until_date).strftime("%d.%m.%Y %H:%M:%S")
-                logger.info(f"Пользователь {author_id} замьючен до {date_untildate}")
-                notification_message += f'\n<b>Ограничен до:</b> {date_untildate}'
-                await bot.send_message(
-                    chat_id=notification_chat_id,
-                    message_thread_id=notification_chat_spam_thread,
-                    text=notification_message,
-                    parse_mode=ParseMode.HTML
-                )
-                logger.info(f"Сообщение-уведомление без inline-клавиатуры было отправлено")
-            else:
-                mute_inline_kb_list = [
-                    [InlineKeyboardButton(text="🔨 Ограничить пользователя", callback_data=f"mute_user:{author_id}")]
-                ]
-                mute_keyboard = InlineKeyboardMarkup(inline_keyboard=mute_inline_kb_list)
-                await bot.send_message(
-                    chat_id=notification_chat_id,
-                    message_thread_id=notification_chat_spam_thread,
-                    text=notification_message,
-                    parse_mode=ParseMode.HTML,
-                    reply_markup=mute_keyboard
-                )
-                logger.info(f"Сообщение-уведомление с inline-клавиатурой было отправлено")
+        # Определяем, является ли сообщение спамом
+        is_spam = any([has_reply_markup, cas_banned, lols_banned, chatgpt_prediction, bert_prediction[0]])
+        if is_spam:
+            logger.info(f"Сообщение от {author_id} идентифицировано как спам")
         else:
-            # В тестовом режиме выводим диагностическую информацию
-            cmodels_predictions = get_predictions(message_text)
-            reply_message = f'''ID пользователя: {author_id}
-Имя пользователя: {author_name}
-Отправлено админом: {sent_by_admin}
-Имеет inline клавиатуру: {has_reply_markup}
-Забанен ли в CAS: {cas_banned}
-Забанен ли в LOLS: {lols_banned}
-Предикт BERT: {bert_prediction}
-Предикт кастомных моделей: {cmodels_predictions}'''
-            await message.reply(reply_message)
-            logger.info(f"Отправлено диагностическое сообщение для пользователя {author_id}")
+            logger.debug(f"Сообщение от {author_id} не считается спамом")
+            return None
+
+        # Формируем словарь с данными для записи в базу
+        result_dict = {
+            "timestamp": datetime.now().timestamp(),
+            "author_id": author_id,
+            "author_username": author_name,
+            "message_text": message_text,
+            "has_reply_markup": has_reply_markup,
+            "cas": cas_banned,
+            "lols": lols_banned,
+            "chatgpt_prediction": chatgpt_prediction,
+            "bert_prediction": bert_prediction
+        }
+
+        # Создаем запись о спаме
+        new_spam = SpamMessage(
+            timestamp=result_dict["timestamp"],
+            author_id=result_dict["author_id"],
+            author_username=result_dict["author_username"],
+            message_text=result_dict["message_text"],
+            has_reply_markup=result_dict["has_reply_markup"],
+            cas=result_dict["cas"],
+            lols=result_dict["lols"],
+            chatgpt_prediction=result_dict.get("chatgpt_prediction", 0),
+            bert_prediction=round(result_dict["bert_prediction"][1][1], 7)
+        )
+        # Сохраняем запись в базу данных
+        with create_app().app_context():
+            db.session.add(new_spam)
+            db.session.commit()
+            logger.info(f"Запись о спаме добавлена в БД для пользователя {author_id}")
+
+        # Обработка настроек
+        enable_deleting = config["ENABLE_DELETING"]
+        enable_automuting = config["ENABLE_AUTOMUTING"]
+
+        # Кнопки для уведомления
+        delete_btn = None if enable_deleting else InlineKeyboardButton(
+            text="🗑 Удалить сообщение",
+            callback_data=f"delete_message:{message.message_id}"
+        )
+        mute_btn = None if enable_automuting else InlineKeyboardButton(
+            text="🔨 Ограничить пользователя",
+            callback_data=f"mute_user:{author_id}"
+        )
+
+        # Авто-удаление сообщения
+        if enable_deleting:
+            await message.delete()
+            logger.info(f"Сообщение от {author_id} удалено")
+
+        # Сохранение/обновление данных по пользователю
+        with create_app().app_context():
+            muted = MutedUser.query.filter_by(id=author_id).first()
+
+            if not muted:
+                relapse = 1
+                until = add_hours_get_timestamp(24) if enable_automuting else None
+                muted = MutedUser(
+                    id=author_id,
+                    username=author_name,
+                    timestamp=result_dict["timestamp"],
+                    muted_till_timestamp=until,
+                    relapse_number=relapse
+                )
+                db.session.add(muted)
+                logger.info(f"Создана новая запись о пользователе {author_id}")
+            else:
+                relapse = muted.relapse_number + 1
+                muted.relapse_number = relapse
+                hours = 168 if relapse == 2 else 999
+                muted.muted_till_timestamp = add_hours_get_timestamp(hours) if enable_automuting else None
+                logger.info(
+                    f"Обновлена запись о пользователе {author_id} "
+                    f"(Рецидив №{relapse})"
+                )
+
+            db.session.commit()
+
+        # Формирование текста уведомления
+        ts = datetime.fromtimestamp(result_dict["timestamp"]).strftime("%d.%m.%Y %H:%M:%S")
+        has_kb = result_dict["has_reply_markup"]
+        notif = (
+            f"<b>Дата:</b> {ts}\n"
+            f"<b>ID пользователя:</b> <code>{author_id}</code>\n"
+            f"<b>Имя пользователя:</b> <code>{author_name}</code>\n"
+            f"<b>Текст сообщения:</b>\n<blockquote>{result_dict['message_text']}</blockquote>\n"
+            f"<b>Имеет inline-клавиатуру:</b> "
+            f"{'Да' if has_kb else 'Нет' if has_kb is False else 'Отключено'}\n"
+            f"<b>Вердикт RuBert:</b> "
+            f"<code>{round(result_dict['bert_prediction'][1][1], 7)}</code>\n"
+            f"<b>Количество нарушений:</b> {relapse}"
+        )
+
+        notification_kwargs = {
+            "chat_id": config["NOTIFICATION_CHAT_ID"],
+            "message_thread_id": config["NOTIFICATION_CHAT_SPAM_THREAD"],
+            "text": notif,
+            "parse_mode": ParseMode.HTML
+        }
+
+        # Если авто-мьютинг и авто-удаление — сначала ограничиваем права
+        if enable_automuting and enable_deleting:
+            await bot.restrict_chat_member(
+                chat_id=chat_id,
+                user_id=author_id,
+                permissions=types.ChatPermissions(can_send_messages=False),
+                until_date=muted.muted_till_timestamp
+            )
+            until_str = datetime.fromtimestamp(muted.muted_till_timestamp).strftime("%d.%m.%Y %H:%M:%S")
+            logger.info(f"Пользователь {author_id} замьючен до {until_str}")
+            notification_kwargs["text"] += f"\n<b>Ограничен до:</b> {until_str}"
+            await bot.send_message(**notification_kwargs)
+            logger.info("Сообщение-уведомление без inline-клавиатуры было отправлено")
+        else:
+            # Формируем клавиатуру (если есть что показывать)
+            buttons = [btn for btn in (delete_btn, mute_btn) if btn]
+            if buttons:
+                notification_kwargs["reply_markup"] = InlineKeyboardMarkup(inline_keyboard=[[btn] for btn in buttons])
+            await bot.send_message(**notification_kwargs)
+            kb_desc = []
+            if delete_btn: kb_desc.append("Удалить сообщение")
+            if mute_btn: kb_desc.append("Ограничить пользователя")
+            logger.info(
+                f"Сообщение-уведомление с inline-клавиатурой "
+                f"[{', '.join(kb_desc)}] было отправлено"
+                if buttons else
+                "Сообщение-уведомление без inline-клавиатуры было отправлено"
+            )
     except Exception as e:
         logger.error(f"Ошибка при обработке сообщения в чате {chat_id}: {e}")
 
