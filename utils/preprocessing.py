@@ -90,6 +90,11 @@ def replace_tags(text: str) -> str:
     return text
 
 
+def contains_email(text):
+    email_pattern = r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+'
+    return bool(re.search(email_pattern, text))
+
+
 def preprocess_text(
         text: str,
         lower: bool = True,

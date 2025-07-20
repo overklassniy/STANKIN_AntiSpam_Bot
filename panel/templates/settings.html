@@ -56,7 +56,7 @@
             {% else %}
             <div class="form-group">
                 <label for="{{ field.name }}">{{ field.name }}</label>
-                <input {% if not can_configure %}disabled{% endif %} class="text_input" type="{{ field.type }}" id="{{ field.name }}" name="{{ field.name }}" value="{{ field.value }}">
+                <input {% if not can_configure %}disabled{% endif %} class="text_input" type="{{ field.type }}" {% if field.type == "number" %}step="any"{% endif %} id="{{ field.name }}" name="{{ field.name }}" value="{{ field.value }}">
             </div>
             {% endif %}
             {% endfor %}

@@ -40,7 +40,10 @@ def setup_logger() -> logging.Logger:
 
         # Логирование в консоль с поддержкой UTF-8
         console_handler = logging.StreamHandler()
-        console_handler.stream.reconfigure(encoding="utf-8")
+        try:
+            console_handler.stream.reconfigure(encoding="utf-8")
+        except AttributeError:
+            pass  # Игнорируем для среды без поддержки reconfigure
 
         formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
         file_handler.setFormatter(formatter)
