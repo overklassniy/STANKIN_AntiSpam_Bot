@@ -93,11 +93,15 @@ HELPDESK_EMAIL=почта_техподдержки
     "BOT_NAME": "AntiSpam_bot",
     "TARGET_CHAT_ID": -123456789,
     "NOTIFICATION_CHAT_ID": -987654321,
-    "NOTIFICATION_CHAT_SPAM_THREAD": 1,
+    "NOTIFICATION_CHAT_98_SPAM_THREAD": 1,
+    "NOTIFICATION_CHAT_94_SPAM_THREAD": 2,
+    "NOTIFICATION_CHAT_NS_SPAM_THREAD": 3, 
+    "COLLECT_ALL_MESSAGES": false,
     "LOGS_DIR": "logs",
     "MODELS_DIR": "models",
     "BERT_MODEL": "models/finetuned_rubert_tiny2",
     "BERT_THRESHOLD": 0.945,
+    "BERT_SURE_THRESHOLD": 0.98,
     "CHECK_REPLY_MARKUP": true,
     "CHECK_CAS": true,
     "CHECK_LOLS": true,
@@ -117,11 +121,15 @@ HELPDESK_EMAIL=почта_техподдержки
 - `BOT_NAME` – @username Telegram бота, под которым его можно найти в Telegram.
 - `TARGET_CHAT_ID` – Идентификатор чата, в котором бот будет удалять спам-сообщения.
 - `NOTIFICATION_CHAT_ID` – Идентификатор чата, в который бот будет присылать уведомления о спам-сообщениях.
-- `NOTIFICATION_CHAT_SPAM_THREAD` – Номер подтемы чата (супергруппы), в который бот будет присылать уведомления о спам-сообщениях.
+- `NOTIFICATION_CHAT_98_SPAM_THREAD` – Номер подтемы чата (супергруппы), в который бот будет присылать уведомления о спам-сообщениях.
+- `NOTIFICATION_CHAT_94_SPAM_THREAD` – Номер подтемы чата (супергруппы), в который бот будет присылать уведомления о спам-сообщениях, имеющих вероятность между BERT_THRESHOLD и BERT_SURE_THRESHOLD (не удаляются автоматически).
+- `NOTIFICATION_CHAT_NS_SPAM_THREAD` – Номер подтемы чата (супергруппы), в который бот будет присылать уведомления о спам-сообщениях, не прошедших проверку модели, но содержащих электронную почту.
+- `COLLECT_ALL_MESSAGES` – Флаг, включающий сбор всех сообщений в отдельный файл `../data/collected_messages.txt'.
 - `LOGS_DIR` – Директория для хранения логов работы системы.
 - `MODELS_DIR` – Путь к каталогу с обученными моделями.
 - `BERT_MODEL` – Путь к модели RuBERT, используемой для классификации сообщений.
 - `BERT_THRESHOLD` – Порог уверенности для классификации сообщения как спам (значение от 0 до 1).
+- `BERT_SURE_THRESHOLD` – Порог уверенности для классификации сообщения как спам у его удаления (значение от 0 до 1).
 - `CHECK_REPLY_MARKUP` – Флаг, включающий проверку на вложенную клавиатуру.
 - `CHECK_CAS` – Флаг, включающий проверку в Combot Anti-Spam (CAS).
 - `CHECK_LOLS` – Флаг, включающий проверку в LOLS.

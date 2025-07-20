@@ -9,6 +9,7 @@ from aiogram.enums import ChatType, ParseMode
 from aiogram.filters import Command, CommandStart, CommandObject
 from aiogram.types import BotCommand, InlineKeyboardButton, InlineKeyboardMarkup
 from dotenv import load_dotenv
+from sympy.unify.core import is_args
 from werkzeug.security import generate_password_hash
 
 from panel.app import create_app, db
@@ -16,6 +17,7 @@ from panel.db_models import SpamMessage, User, MutedUser
 from utils.apis import get_cas, get_lols
 from utils.basic import config, logger, add_hours_get_timestamp
 from utils.predictions import chatgpt_predict, bert_predict, get_predictions
+from utils.preprocessing import contains_email
 
 # Загрузка переменных окружения
 load_dotenv()
@@ -285,7 +287,16 @@ async def handle_message(message: types.Message) -> None:
     global bot
 
     chat_id = config["TARGET_CHAT_ID"]
-    logger.info(f"Обработка сообщения {message.text}\nот пользователя {message.from_user.id} в чате {chat_id}")
+    if message.chat.id != chat_id:
+        return
+
+    if config['COLLECT_ALL_MESSAGES']:
+        collected_messages = open('data/collected_messages.txt', 'a', encoding='UTF-8')
+        collected_message = message.text.replace('\n', r'\n')
+        collected_messages.write(f"{collected_message}\n")
+        collected_messages.close()
+
+    logger.info(f"Обработка сообщения <<{message.text}>> от пользователя {message.from_user.id} в чате {chat_id}")
 
     try:
         author = message.from_user
@@ -314,6 +325,8 @@ async def handle_message(message: types.Message) -> None:
         # Проверяем наличие inline клавиатуры (reply_markup)
         has_reply_markup = bool(message.reply_markup) if config['CHECK_REPLY_MARKUP'] else None
 
+        is_containig_email = contains_email(message_text)
+
         # Получаем данные по кастомным API для проверки спама
         cas_banned = get_cas(author_id) if config["CHECK_CAS"] else None
         lols_banned = get_lols(author_id) if config["CHECK_LOLS"] else None
@@ -324,11 +337,36 @@ async def handle_message(message: types.Message) -> None:
             chatgpt_prediction = await chatgpt_predict(message_text)
             logger.debug(f"ChatGPT предикт для пользователя {author_id}: {chatgpt_prediction}")
         bert_prediction = bert_predict(message_text, config["BERT_THRESHOLD"])
+        ausure = False
+        if bert_prediction[0] and (max(bert_prediction[1]) > config["BERT_SURE_THRESHOLD"]):
+            ausure = True
         logger.debug(f"BERT предикт для пользователя {author_id}: {bert_prediction}")
 
         # Определяем, является ли сообщение спамом
-        is_spam = any([has_reply_markup, cas_banned, lols_banned, chatgpt_prediction, bert_prediction[0]])
-        if is_spam:
+        is_spam = False
+
+        if has_reply_markup:
+            is_spam = True
+        elif is_containig_email:
+            if bool(bert_prediction[0]):
+                is_spam = "NS"  # Частичный спам
+            else:
+                is_spam = False
+        else:
+            if bool(bert_prediction[0]):
+                is_spam = True
+            elif cas_banned or lols_banned or chatgpt_prediction:
+                is_spam = True
+
+        notification_thread = config["NOTIFICATION_CHAT_94_SPAM_THREAD"]
+
+        # Логирование результата
+        if is_spam == "NS":
+            notification_thread = config["NOTIFICATION_CHAT_NS_SPAM_THREAD"]
+            logger.info(f"Сообщение от {author_id} идентифицировано частично как спам")
+        elif is_spam is True:
+            if ausure:
+                notification_thread = config["NOTIFICATION_CHAT_98_SPAM_THREAD"]
             logger.info(f"Сообщение от {author_id} идентифицировано как спам")
         else:
             logger.debug(f"Сообщение от {author_id} не считается спамом")
@@ -370,7 +408,7 @@ async def handle_message(message: types.Message) -> None:
         enable_automuting = config["ENABLE_AUTOMUTING"]
 
         # Кнопки для уведомления
-        delete_btn = None if enable_deleting else InlineKeyboardButton(
+        delete_btn = None if (enable_deleting and ausure) else InlineKeyboardButton(
             text="🗑 Удалить сообщение",
             callback_data=f"delete_message:{message.message_id}"
         )
@@ -380,7 +418,7 @@ async def handle_message(message: types.Message) -> None:
         )
 
         # Авто-удаление сообщения
-        if enable_deleting:
+        if enable_deleting and (is_spam is True):
             await message.delete()
             logger.info(f"Сообщение от {author_id} удалено")
 
@@ -429,7 +467,7 @@ async def handle_message(message: types.Message) -> None:
 
         notification_kwargs = {
             "chat_id": config["NOTIFICATION_CHAT_ID"],
-            "message_thread_id": config["NOTIFICATION_CHAT_SPAM_THREAD"],
+            "message_thread_id": notification_thread,
             "text": notif,
             "parse_mode": ParseMode.HTML
         }
