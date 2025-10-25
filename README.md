@@ -95,7 +95,8 @@ HELPDESK_EMAIL=почта_техподдержки
     "NOTIFICATION_CHAT_ID": -987654321,
     "NOTIFICATION_CHAT_98_SPAM_THREAD": 1,
     "NOTIFICATION_CHAT_94_SPAM_THREAD": 2,
-    "NOTIFICATION_CHAT_NS_SPAM_THREAD": 3, 
+    "NOTIFICATION_CHAT_NS_SPAM_THREAD": 3,
+    "NOTIFICATION_CHAT_MUTED_THREAD": 4,
     "COLLECT_ALL_MESSAGES": false,
     "LOGS_DIR": "logs",
     "MODELS_DIR": "models",
@@ -121,10 +122,11 @@ HELPDESK_EMAIL=почта_техподдержки
 - `BOT_NAME` – @username Telegram бота, под которым его можно найти в Telegram.
 - `TARGET_CHAT_ID` – Идентификатор чата, в котором бот будет удалять спам-сообщения.
 - `NOTIFICATION_CHAT_ID` – Идентификатор чата, в который бот будет присылать уведомления о спам-сообщениях.
-- `NOTIFICATION_CHAT_98_SPAM_THREAD` – Номер подтемы чата (супергруппы), в который бот будет присылать уведомления о спам-сообщениях.
-- `NOTIFICATION_CHAT_94_SPAM_THREAD` – Номер подтемы чата (супергруппы), в который бот будет присылать уведомления о спам-сообщениях, имеющих вероятность между BERT_THRESHOLD и BERT_SURE_THRESHOLD (не удаляются автоматически).
-- `NOTIFICATION_CHAT_NS_SPAM_THREAD` – Номер подтемы чата (супергруппы), в который бот будет присылать уведомления о спам-сообщениях, не прошедших проверку модели, но содержащих электронную почту.
-- `COLLECT_ALL_MESSAGES` – Флаг, включающий сбор всех сообщений в отдельный файл `../data/collected_messages.txt'.
+- `NOTIFICATION_CHAT_98_SPAM_THREAD` – Номер подтемы чата (супергруппы), в которую бот будет присылать уведомления о спам-сообщениях.
+- `NOTIFICATION_CHAT_94_SPAM_THREAD` – Номер подтемы чата (супергруппы), в которую бот будет присылать уведомления о спам-сообщениях, имеющих вероятность между BERT_THRESHOLD и BERT_SURE_THRESHOLD (не удаляются автоматически).
+- `NOTIFICATION_CHAT_NS_SPAM_THREAD` – Номер подтемы чата (супергруппы), в которую бот будет присылать уведомления о спам-сообщениях, не прошедших проверку модели, но содержащих электронную почту.
+- `NOTIFICATION_CHAT_MUTED_THREAD` – Номер подтемы чата (супергруппы), в которую бот будет присылать уведомления об ограниченных пользователях. 
+- `COLLECT_ALL_MESSAGES` – Флаг, включающий сбор всех сообщений в отдельный файл `../data/collected_messages.txt`.
 - `LOGS_DIR` – Директория для хранения логов работы системы.
 - `MODELS_DIR` – Путь к каталогу с обученными моделями.
 - `BERT_MODEL` – Путь к модели RuBERT, используемой для классификации сообщений.

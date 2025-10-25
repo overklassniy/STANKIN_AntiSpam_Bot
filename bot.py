@@ -1,7 +1,6 @@
 import os
 import secrets
 import string
-from copy import copy
 from datetime import datetime
 
 from aiogram import Bot, Dispatcher, types, F
@@ -9,14 +8,13 @@ from aiogram.enums import ChatType, ParseMode
 from aiogram.filters import Command, CommandStart, CommandObject
 from aiogram.types import BotCommand, InlineKeyboardButton, InlineKeyboardMarkup
 from dotenv import load_dotenv
-from sympy.unify.core import is_args
 from werkzeug.security import generate_password_hash
 
 from panel.app import create_app, db
 from panel.db_models import SpamMessage, User, MutedUser
 from utils.apis import get_cas, get_lols
 from utils.basic import config, logger, add_hours_get_timestamp
-from utils.predictions import chatgpt_predict, bert_predict, get_predictions
+from utils.predictions import chatgpt_predict, bert_predict
 from utils.preprocessing import contains_email
 
 # Загрузка переменных окружения
@@ -82,7 +80,8 @@ async def handle_code_command(message: types.Message) -> None:
 
 
 # Обработчик команды /get_password
-@dp.message(Command(BotCommand(command='get_password', description='Получить пароль для авторизации в панели управления Анти-Спам системы')))
+@dp.message(Command(BotCommand(command='get_password',
+                               description='Получить пароль для авторизации в панели управления Анти-Спам системы')))
 async def handle_get_password_command(message: types.Message) -> None:
     """
     Обрабатывает команду /get_password, проверяет права пользователя в группе и создает/обновляет запись пользователя в базе данных с новым сгенерированным паролем.
@@ -204,9 +203,13 @@ async def process_mute_user_callback(callback: types.CallbackQuery) -> None:
         app = create_app()
         with app.app_context():
             muted_user_db = MutedUser.query.filter_by(id=user_id).first()
-            if muted_user_db.relapse_number == 1:
+
+            relapse_number = muted_user_db.relapse_number
+            username_local = muted_user_db.username
+
+            if relapse_number == 1:
                 new_until_date = add_hours_get_timestamp(24)
-            elif muted_user_db.relapse_number == 2:
+            elif relapse_number == 2:
                 new_until_date = add_hours_get_timestamp(168)
             else:
                 new_until_date = add_hours_get_timestamp(999)
@@ -234,10 +237,79 @@ async def process_mute_user_callback(callback: types.CallbackQuery) -> None:
         await callback.message.edit_text(new_text, parse_mode=ParseMode.HTML, reply_markup=new_markup)
 
         await callback.answer("Пользователь ограничен!")
-        logger.info(f"Пользователь {user_id} ограничен до {date_untildate} (Рецидив №{muted_user_db.relapse_number})")
+        logger.info(f"Пользователь {user_id} ограничен до {date_untildate} (Рецидив №{relapse_number})")
+
+        muted_notification_thread = config["NOTIFICATION_CHAT_MUTED_THREAD"]
+        ts = datetime.fromtimestamp(datetime.now().timestamp()).strftime("%d.%m.%Y %H:%M:%S")
+        muted_notification = (
+            f"<b>Дата:</b> {ts}\n"
+            f"<b>ID пользователя:</b> <code>{user_id}</code>\n"
+            f"<b>Имя пользователя:</b> <code>{username_local}</code>\n"
+            f"<b>Дата окончания ограничения:</b> {date_untildate}\n"
+            f"<b>Количество нарушений:</b> {relapse_number}"
+        )
+        unmute_btn = InlineKeyboardButton(
+            text="🔓 Снять ограничение",
+            callback_data=f"unmute_user:{user_id}"
+        )
+        unmute_keyboard = InlineKeyboardMarkup(inline_keyboard=[[unmute_btn]])
+        await bot.send_message(
+            chat_id=config["NOTIFICATION_CHAT_ID"],
+            message_thread_id=muted_notification_thread,
+            text=muted_notification,
+            parse_mode=ParseMode.HTML,
+            reply_markup=unmute_keyboard,
+        )
+        logger.info(f"Сообщение об ограничении пользователя отправлено")
     except Exception as e:
         logger.error(f"Ошибка в обработчике mute_user: {e}")
         await callback.answer("Ошибка при ограничении пользователя!")
+
+
+@dp.callback_query(lambda c: c.data.startswith("unmute_user"))
+async def process_unmute_user_callback(callback: types.CallbackQuery) -> None:
+    """
+    Обрабатывает снятие ограничения с пользователя.
+    """
+    parts = callback.data.split(":")
+    if len(parts) != 2:
+        await callback.answer("Неверные данные для снятия ограничения!")
+        return
+
+    user_id = int(parts[1])
+    chat_id = config["TARGET_CHAT_ID"]
+
+    try:
+        # Снимаем ограничения в Telegram
+        await bot.restrict_chat_member(
+            chat_id=chat_id,
+            user_id=user_id,
+            permissions=types.ChatPermissions(can_send_messages=True)
+        )
+
+        # Работаем с базой данных через контекст приложения
+        app = create_app()
+        with app.app_context():
+            muted_user = MutedUser.query.filter_by(id=user_id).first()
+            if muted_user:
+                muted_user.muted_till_timestamp = None
+                db.session.commit()
+                logger.info(f"Снято ограничение с пользователя {user_id} в БД")
+
+        # Обновляем уведомление
+        original_text = getattr(callback.message, "html_text", callback.message.text)
+        new_text = original_text + "\n<b>Ограничение снято вручную</b>"
+
+        await callback.message.edit_text(
+            new_text,
+            parse_mode=ParseMode.HTML,
+            reply_markup=None
+        )
+        await callback.answer("Ограничение снято!")
+
+    except Exception as e:
+        logger.error(f"Ошибка при снятии ограничения пользователя {user_id}: {e}")
+        await callback.answer("Не удалось снять ограничение!")
 
 
 @dp.callback_query(lambda c: c.data.startswith("delete_message"))
@@ -305,7 +377,8 @@ async def handle_message(message: types.Message) -> None:
 
         # Получаем информацию о пользователе в чате
         author_chat_member = await bot.get_chat_member(chat_id=chat_id, user_id=author_id)
-        sent_by_admin = int((author_chat_member.status in ["administrator", "creator"]) or (author_id in [777000, 1087968824]))
+        sent_by_admin = int(
+            (author_chat_member.status in ["administrator", "creator"]) or (author_id in [777000, 1087968824]))
         logger.debug(f"Статус пользователя {author_id} в чате {chat_id}: {author_chat_member.status}")
 
         # В тестовом режиме админские сообщения обрабатываются
@@ -407,7 +480,7 @@ async def handle_message(message: types.Message) -> None:
         enable_deleting = config["ENABLE_DELETING"]
         enable_automuting = config["ENABLE_AUTOMUTING"]
 
-        # Кнопки для уведомления
+        # Кнопки для уведомлений
         delete_btn = None if (enable_deleting and ausure) else InlineKeyboardButton(
             text="🗑 Удалить сообщение",
             callback_data=f"delete_message:{message.message_id}"
@@ -416,9 +489,13 @@ async def handle_message(message: types.Message) -> None:
             text="🔨 Ограничить пользователя",
             callback_data=f"mute_user:{author_id}"
         )
+        unmute_btn = InlineKeyboardButton(
+            text="🔓 Снять ограничение",
+            callback_data=f"unmute_user:{author_id}"
+        )
 
         # Авто-удаление сообщения
-        if enable_deleting and (is_spam is True):
+        if enable_deleting and (is_spam is True) and ausure:
             await message.delete()
             logger.info(f"Сообщение от {author_id} удалено")
 
@@ -453,7 +530,7 @@ async def handle_message(message: types.Message) -> None:
         # Формирование текста уведомления
         ts = datetime.fromtimestamp(result_dict["timestamp"]).strftime("%d.%m.%Y %H:%M:%S")
         has_kb = result_dict["has_reply_markup"]
-        notif = (
+        deleted_message_notification = (
             f"<b>Дата:</b> {ts}\n"
             f"<b>ID пользователя:</b> <code>{author_id}</code>\n"
             f"<b>Имя пользователя:</b> <code>{author_name}</code>\n"
@@ -465,10 +542,10 @@ async def handle_message(message: types.Message) -> None:
             f"<b>Количество нарушений:</b> {relapse}"
         )
 
-        notification_kwargs = {
+        deleted_message_notification_kwargs = {
             "chat_id": config["NOTIFICATION_CHAT_ID"],
             "message_thread_id": notification_thread,
-            "text": notif,
+            "text": deleted_message_notification,
             "parse_mode": ParseMode.HTML
         }
 
@@ -482,15 +559,33 @@ async def handle_message(message: types.Message) -> None:
             )
             until_str = datetime.fromtimestamp(muted.muted_till_timestamp).strftime("%d.%m.%Y %H:%M:%S")
             logger.info(f"Пользователь {author_id} замьючен до {until_str}")
-            notification_kwargs["text"] += f"\n<b>Ограничен до:</b> {until_str}"
-            await bot.send_message(**notification_kwargs)
-            logger.info("Сообщение-уведомление без inline-клавиатуры было отправлено")
+            deleted_message_notification_kwargs["text"] += f"\n<b>Ограничен до:</b> {until_str}"
+            await bot.send_message(**deleted_message_notification_kwargs)
+            logger.info("Сообщение-уведомление об удалении без inline-клавиатуры было отправлено")
+            muted_notification_thread = config["NOTIFICATION_CHAT_MUTED_THREAD"]
+            muted_notification = (
+                f"<b>Дата:</b> {ts}\n"
+                f"<b>ID пользователя:</b> <code>{author_id}</code>\n"
+                f"<b>Имя пользователя:</b> <code>{author_name}</code>\n"
+                f"<b>Дата окончания ограничения:</b> {until_str}\n"
+                f"<b>Количество нарушений:</b> {relapse}"
+            )
+            unmute_keyboard = InlineKeyboardMarkup(inline_keyboard=[[unmute_btn]])
+            await bot.send_message(
+                chat_id=config["NOTIFICATION_CHAT_ID"],
+                message_thread_id=muted_notification_thread,
+                text=muted_notification,
+                parse_mode=ParseMode.HTML,
+                reply_markup=unmute_keyboard
+            )
+            logger.info(f"Сообщение об ограничении пользователя отправлено")
         else:
             # Формируем клавиатуру (если есть что показывать)
             buttons = [btn for btn in (delete_btn, mute_btn) if btn]
             if buttons:
-                notification_kwargs["reply_markup"] = InlineKeyboardMarkup(inline_keyboard=[[btn] for btn in buttons])
-            await bot.send_message(**notification_kwargs)
+                deleted_message_notification_kwargs["reply_markup"] = InlineKeyboardMarkup(
+                    inline_keyboard=[[btn] for btn in buttons])
+            await bot.send_message(**deleted_message_notification_kwargs)
             kb_desc = []
             if delete_btn: kb_desc.append("Удалить сообщение")
             if mute_btn: kb_desc.append("Ограничить пользователя")
