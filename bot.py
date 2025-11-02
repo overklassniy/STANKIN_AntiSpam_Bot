@@ -524,7 +524,9 @@ async def handle_message(message: types.Message) -> None:
                     f"Обновлена запись о пользователе {author_id} "
                     f"(Рецидив №{relapse})"
                 )
-
+                
+            until_value = muted.muted_till_timestamp
+            
             db.session.commit()
 
         # Формирование текста уведомления
@@ -555,9 +557,9 @@ async def handle_message(message: types.Message) -> None:
                 chat_id=chat_id,
                 user_id=author_id,
                 permissions=types.ChatPermissions(can_send_messages=False),
-                until_date=muted.muted_till_timestamp
+                until_date=until_value
             )
-            until_str = datetime.fromtimestamp(muted.muted_till_timestamp).strftime("%d.%m.%Y %H:%M:%S")
+            until_str = datetime.fromtimestamp(until_value).strftime("%d.%m.%Y %H:%M:%S")
             logger.info(f"Пользователь {author_id} замьючен до {until_str}")
             deleted_message_notification_kwargs["text"] += f"\n<b>Ограничен до:</b> {until_str}"
             await bot.send_message(**deleted_message_notification_kwargs)
@@ -602,7 +604,7 @@ async def handle_message(message: types.Message) -> None:
 # Функция для запуска бота
 async def start_bot() -> None:
     """
-    Инициализирует объект бота, сохраняет его ID и запускает поллинг сообщений.\
+    Инициализирует объект бота, сохраняет его ID и запускает поллинг сообщений.
     """
     global bot
     global bot_id
