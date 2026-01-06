@@ -1,7 +1,7 @@
 body {
     overflow-y: hidden;
     margin: 0;
-    height: 100vh;
+    min-height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -13,47 +13,105 @@ body {
     align-items: center;
     height: calc(100% - 4rem);
     width: 100%;
+    padding: 1rem;
 }
 
 .center {
     text-align: center;
     margin-bottom: 8rem;
+    padding: 0 1rem;
 }
 
 h1 {
     font-size: 36pt;
+    line-height: 1.3;
+    margin-bottom: 2rem;
 }
 
 button {
     background-color: rgba(155, 155, 155, 0.1);
     color: var(--second_color);
     display: block;
-    padding: 13px;
+    padding: 13px 24px;
     border-radius: 5px;
     outline: none;
     font-size: 20pt;
     letter-spacing: 1.5px;
     font-weight: bold;
     width: 100%;
+    max-width: 300px;
     cursor: pointer;
-    margin-top: 2rem;
+    margin: 2rem auto 0;
     transition: all 0.1s ease-in-out;
     border: none;
-    -webkit-border-radius: 5px;
-    -moz-border-radius: 5px;
-    -ms-border-radius: 5px;
-    -o-border-radius: 5px;
-    -webkit-transition: all 0.1s ease-in-out;
-    -moz-transition: all 0.1s ease-in-out;
-    -ms-transition: all 0.1s ease-in-out;
-    -o-transition: all 0.1s ease-in-out;
 }
 
 button:hover {
     box-shadow: 0 0 10px 1px rgba(0, 0, 0, 0.15);
     transform: scale(1.02);
-    -webkit-transform: scale(1.02);
-    -moz-transform: scale(1.02);
-    -ms-transform: scale(1.02);
-    -o-transform: scale(1.02);
+}
+
+button:active {
+    transform: scale(0.98);
+}
+
+/* Планшеты */
+@media (max-width: 768px) {
+    .center {
+        margin-bottom: 4rem;
+    }
+
+    h1 {
+        font-size: 28pt;
+    }
+
+    button {
+        font-size: 16pt;
+        padding: 12px 20px;
+    }
+}
+
+/* Мобильные устройства */
+@media (max-width: 480px) {
+    .center {
+        margin-bottom: 2rem;
+    }
+
+    h1 {
+        font-size: 20pt;
+    }
+
+    button {
+        font-size: 14pt;
+        padding: 10px 16px;
+    }
+}
+
+/* Очень маленькие экраны */
+@media (max-width: 320px) {
+    h1 {
+        font-size: 16pt;
+    }
+
+    button {
+        font-size: 12pt;
+    }
+}
+
+/* Ландшафтная ориентация */
+@media (max-height: 500px) and (orientation: landscape) {
+    .center {
+        margin-bottom: 1rem;
+    }
+
+    h1 {
+        font-size: 18pt;
+        margin-bottom: 1rem;
+    }
+
+    button {
+        margin-top: 1rem;
+        padding: 8px 16px;
+        font-size: 14pt;
+    }
 }

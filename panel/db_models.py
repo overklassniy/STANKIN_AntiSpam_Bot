@@ -1,53 +1,32 @@
+"""
+Модели базы данных для панели управления.
+"""
+
 from flask_login import UserMixin
 from panel.app import db
-from utils.basic import logger
 
 
 class User(UserMixin, db.Model):
     """
-    Модель пользователя.
-
-    Аргументы:
-        id (int): Первичный ключ.
-        name (str): Имя пользователя.
-        password (str): Хэшированный пароль пользователя.
-        can_configure (bool): Флаг, указывающий, может ли пользователь настраивать систему.
+    Модель пользователя панели управления.
     """
+    __tablename__ = 'user'
+
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(1000))
     password = db.Column(db.String(1000))
     can_configure = db.Column(db.Boolean, default=False)
 
-    def __init__(self, *args, **kwargs) -> None:
-        """
-        Инициализирует объект пользователя.
-        """
-        super().__init__(*args, **kwargs)
-        logger.info("Создан новый объект User: %s", self)
-
     def __repr__(self) -> str:
-        """
-        Возвращает строковое представление объекта пользователя.
-        """
         return f"<User {self.id}: {self.name}>"
 
 
 class SpamMessage(db.Model):
     """
-    Модель спам-сообщения.
-
-    Аргументы:
-        id (int): Первичный ключ.
-        timestamp (float): Метка времени сообщения.
-        author_id (int): Идентификатор автора сообщения.
-        author_username (str): Имя пользователя автора сообщения.
-        message_text (str): Текст сообщения.
-        has_reply_markup (bool, optional): Наличие inline-клавиатуры.
-        cas (bool, optional): Флаг, указывающий на бан в CAS.
-        lols (bool, optional): Флаг, указывающий на бан в LOLS.
-        chatgpt_prediction (float, optional): Вердикт ChatGPT.
-        bert_prediction (float, optional): Вердикт RuBert.
+    Модель обнаруженного спам-сообщения.
     """
+    __tablename__ = 'spam_message'
+
     id = db.Column(db.Integer, primary_key=True)
     timestamp = db.Column(db.Float, nullable=False)
     author_id = db.Column(db.BigInteger, nullable=False)
@@ -59,44 +38,115 @@ class SpamMessage(db.Model):
     chatgpt_prediction = db.Column(db.Float, nullable=True)
     bert_prediction = db.Column(db.Float, nullable=True)
 
-    def __init__(self, *args, **kwargs) -> None:
-        """
-        Инициализирует объект спам-сообщения.
-        """
-        super().__init__(*args, **kwargs)
-        logger.info("Создан новый объект SpamMessage: %s", self)
-
     def __repr__(self) -> str:
-        """
-        Возвращает строковое представление объекта спам-сообщения.
-        """
         return f"<SpamMessage {self.id} от {self.author_username}>"
 
 
 class MutedUser(db.Model):
     """
     Модель ограниченного пользователя.
-
-    Аргументы:
-        id (int): Первичный ключ.
-        muted_till_timestamp (float): Метка времени окончания блокировки.
-        relapse_number (int, optional): Номер рецидива (по умолчанию 0).
     """
+    __tablename__ = 'muted_user'
+
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(255), nullable=True)
     timestamp = db.Column(db.Float, nullable=False)
     muted_till_timestamp = db.Column(db.Float, nullable=True)
     relapse_number = db.Column(db.Integer, nullable=True, default=0)
 
-    def __init__(self, *args, **kwargs) -> None:
-        """
-        Инициализирует объект ограниченного пользователя.
-        """
-        super().__init__(*args, **kwargs)
-        logger.info("Создан новый объект MutedUser: %s", self)
+    def __repr__(self) -> str:
+        return f"<MutedUser {self.username} ({self.id})>"
+
+
+class Setting(db.Model):
+    """
+    Модель настройки системы.
+
+    Хранит настройки, которые могут быть изменены через панель управления.
+    """
+    __tablename__ = 'setting'
+
+    key = db.Column(db.String(100), primary_key=True)
+    value = db.Column(db.Text, nullable=False)
+    value_type = db.Column(db.String(20), nullable=False, default='str')
+    description = db.Column(db.String(500), nullable=True)
 
     def __repr__(self) -> str:
-        """
-        Возвращает строковое представление объекта ограниченного пользователя.
-        """
-        return f"<MutedUser {self.username} ({self.id}), заблокирован до {self.muted_till_timestamp}, рецидивов: {self.relapse_number}>"
+        return f"<Setting {self.key}={self.value}>"
+
+    def get_typed_value(self):
+        """Возвращает значение с правильным типом."""
+        if self.value_type == 'bool':
+            return self.value.lower() in ('true', '1', 'yes')
+        elif self.value_type == 'int':
+            return int(self.value)
+        elif self.value_type == 'float':
+            return float(self.value)
+        return self.value
+
+    @classmethod
+    def set_value(cls, key: str, value, value_type: str = None, description: str = None):
+        """Устанавливает значение настройки."""
+        if value_type is None:
+            if isinstance(value, bool):
+                value_type = 'bool'
+            elif isinstance(value, int):
+                value_type = 'int'
+            elif isinstance(value, float):
+                value_type = 'float'
+            else:
+                value_type = 'str'
+
+        setting = cls.query.get(key)
+        if setting:
+            setting.value = str(value)
+            if value_type:
+                setting.value_type = value_type
+            if description:
+                setting.description = description
+        else:
+            setting = cls(
+                key=key,
+                value=str(value),
+                value_type=value_type,
+                description=description
+            )
+            db.session.add(setting)
+        return setting
+
+
+class CollectedMessage(db.Model):
+    """
+    Модель собранного сообщения.
+
+    Хранит все сообщения для анализа (если включен сбор сообщений).
+    """
+    __tablename__ = 'collected_message'
+
+    id = db.Column(db.Integer, primary_key=True)
+    timestamp = db.Column(db.Float, nullable=False)
+    chat_id = db.Column(db.BigInteger, nullable=False)
+    user_id = db.Column(db.BigInteger, nullable=False)
+    username = db.Column(db.String(255), nullable=True)
+    message_text = db.Column(db.Text, nullable=False)
+
+    def __repr__(self) -> str:
+        return f"<CollectedMessage {self.id} from {self.user_id}>"
+
+
+class WhitelistUser(db.Model):
+    """
+    Модель пользователя в белом списке.
+
+    Пользователи из белого списка не проверяются на спам.
+    """
+    __tablename__ = 'whitelist_user'
+
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(255), nullable=True)
+    added_at = db.Column(db.Float, nullable=False)
+    added_by = db.Column(db.BigInteger, nullable=True)
+    reason = db.Column(db.Text, nullable=True)
+
+    def __repr__(self) -> str:
+        return f"<WhitelistUser {self.username} ({self.id})>"

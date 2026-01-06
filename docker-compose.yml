@@ -1,0 +1,30 @@
+x-common: &common
+  restart: always
+  environment:
+    - TZ=Europe/Moscow
+  working_dir: /app
+
+services:
+  stankin-antispam-bot:
+    <<: *common
+    build: .
+    container_name: stankin-antispam-bot
+    env_file: .env
+    command: python run.py
+    ports:
+      - "${PANEL_PORT:-12523}:${PANEL_PORT:-12523}"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+      # Персистентные данные вне контейнера
+      - ./logs:/app/logs
+      - ./instance:/app/instance
+      - ./data:/app/data
+      # ML модели
+      - ./models:/app/models:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sys; sys.exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s

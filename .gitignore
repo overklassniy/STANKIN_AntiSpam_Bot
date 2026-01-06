@@ -1,0 +1,116 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environments
+.venv/
+venv/
+ENV/
+env/
+pytorch118-venv/
+.python-version
+
+# IDE and Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings/
+*.sublime-project
+*.sublime-workspace
+
+# Environment and Config
+.env
+.env.local
+.env.*.local
+
+# Old config files (no longer used)
+config.json
+config.example.json
+
+# Old run scripts (removed)
+run_bot.py
+run_panel.py
+
+# Logs and Data
+logs/
+*.log
+instance/
+
+# Models (too large for git)
+models/
+models_*/
+
+# Jupyter Notebooks
+ipynb/.ipynb_checkpoints/
+ipynb/rb_results/
+ipynb/*.onnx
+
+# Docker
+docker-entrypoint.sh
+
+# OS Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# Testing and Development
+test_message.py
+tree_generator.py
+requirements_old.txt
+0.26.0
+
+# Chat Exports (private data)
+chat_exports/
+
+# Previous/Old Models
+previous_models/
+
+# Temporary Files
+*.tmp
+*.temp
+*.bak
+*.backup
+
+# Other
+utils/parse_lols.py
+utils/parsed_data_*.txt
+panel/init_db.py
+panel/static/images/stankin-logo.png
+panel/static/images/sas_logo_tg_no_bg.png
+panel/static/images/sas_logo_tg.psd
+data/spam_samples_umputun.txt
+data/dataset_telegram_kaggle.csv
+data/preprocessed.csv
+data/parsed_lols_*.txt
+data/spam_messages_*.json
+data/processed_spam_messages_*.json
+data/dataset_old.json
+data/test_clear_old.json
+ipynb/5. Ускорение моделей RuBert.ipynb

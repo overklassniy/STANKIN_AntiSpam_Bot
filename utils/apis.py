@@ -1,55 +1,143 @@
-from typing import Union
+"""
+Модуль для работы с внешними API проверки на спам.
 
-import requests
+Поддерживаемые API:
+- CAS (Combot Anti-Spam): https://cas.chat
+- LOLS (List of Lame Spammers): https://lols.bot
+"""
 
-from utils.basic import logger
+from typing import Optional
+
+import aiohttp
+
+from utils.logging import logger
+
+# Таймаут для HTTP-запросов
+DEFAULT_TIMEOUT = aiohttp.ClientTimeout(total=10)
 
 
-def get_cas(user_id: int) -> Union[int, dict]:
+async def get_cas_async(user_id: int) -> int:
     """
-    Получает JSON-ответ от API https://api.cas.chat/check.
+    Асинхронно проверяет пользователя через CAS API.
 
-    Аргументы:
-        user_id (int): ID пользователя, который нужно проверить.
+    CAS (Combot Anti-Spam) - это краудсорсинговая база данных спамеров
+    в Telegram, поддерживаемая сообществом.
 
-    Возвращает:
-        int | dict: Целочисленный результат проверки CAS. При ошибке возвращается 0.
+    Args:
+        user_id: Telegram ID пользователя
+
+    Returns:
+        1 если пользователь в базе спамеров, 0 если нет или ошибка
     """
     url = f"https://api.cas.chat/check?user_id={user_id}"
-    logger.info("Начало проверки CAS для пользователя с ID: %s", user_id)
+    logger.debug(f"CAS проверка пользователя {user_id}")
+
     try:
-        response = requests.get(url)
-        response.raise_for_status()  # Проверяем наличие ошибок HTTP
-        data = response.json()
-        logger.debug("Получен ответ от CAS API для пользователя %s: %s", user_id, data)
-        result = int(data.get('ok', 0))
-        logger.info("Проверка CAS завершена успешно для пользователя %s, результат: %s", user_id, result)
-        return result
-    except requests.exceptions.RequestException as e:
-        logger.error("Ошибка при проверке CAS для пользователя %s: %s", user_id, e)
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, timeout=DEFAULT_TIMEOUT) as response:
+                response.raise_for_status()
+                data = await response.json()
+                result = int(data.get('ok', 0))
+                logger.debug(f"CAS результат для {user_id}: {result}")
+                return result
+    except aiohttp.ClientError as e:
+        logger.error(f"CAS ошибка для {user_id}: {e}")
+        return 0
+    except Exception as e:
+        logger.error(f"CAS неожиданная ошибка для {user_id}: {e}")
         return 0
 
 
-def get_lols(account_id: int) -> Union[int, dict]:
+async def get_lols_async(account_id: int) -> int:
     """
-    Получает JSON-ответ от API https://api.lols.bot/account.
+    Асинхронно проверяет пользователя через LOLS API.
 
-    Аргументы:
-        account_id (int): ID аккаунта, который нужно проверить.
+    LOLS (List of Lame Spammers) - это база данных известных
+    спамеров в Telegram.
 
-    Возвращает:
-        int | dict: Целочисленный результат проверки LOLS. При ошибке возвращается 0.
+    Args:
+        account_id: Telegram ID пользователя
+
+    Returns:
+        1 если пользователь заблокирован, 0 если нет или ошибка
     """
     url = f"https://api.lols.bot/account?id={account_id}"
-    logger.info("Начало проверки LOLS для аккаунта с ID: %s", account_id)
+    logger.debug(f"LOLS проверка аккаунта {account_id}")
+
     try:
-        response = requests.get(url)
-        response.raise_for_status()  # Проверяем наличие ошибок HTTP
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, timeout=DEFAULT_TIMEOUT) as response:
+                response.raise_for_status()
+                data = await response.json()
+                result = int(data.get('banned', 0))
+                logger.debug(f"LOLS результат для {account_id}: {result}")
+                return result
+    except aiohttp.ClientError as e:
+        logger.error(f"LOLS ошибка для {account_id}: {e}")
+        return 0
+    except Exception as e:
+        logger.error(f"LOLS неожиданная ошибка для {account_id}: {e}")
+        return 0
+
+
+async def check_all_spam_databases(user_id: int) -> dict:
+    """
+    Проверяет пользователя во всех базах данных спамеров.
+
+    Args:
+        user_id: Telegram ID пользователя
+
+    Returns:
+        Словарь с результатами проверки
+    """
+    import asyncio
+
+    cas_task = get_cas_async(user_id)
+    lols_task = get_lols_async(user_id)
+
+    cas_result, lols_result = await asyncio.gather(cas_task, lols_task)
+
+    return {
+        'cas': bool(cas_result),
+        'lols': bool(lols_result),
+        'any_banned': bool(cas_result or lols_result)
+    }
+
+
+# Синхронные версии для обратной совместимости (deprecated)
+def get_cas(user_id: int) -> int:
+    """
+    Синхронная проверка CAS.
+
+    DEPRECATED: Используйте get_cas_async для асинхронного кода.
+    """
+    import requests
+
+    url = f"https://api.cas.chat/check?user_id={user_id}"
+    try:
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()
         data = response.json()
-        logger.debug("Получен ответ от LOLS API для аккаунта %s: %s", account_id, data)
-        result = int(data.get('banned', 0))
-        logger.info("Проверка LOLS завершена успешно для аккаунта %s, результат: %s", account_id, result)
-        return result
-    except requests.exceptions.RequestException as e:
-        logger.error("Ошибка при проверке LOLS для аккаунта %s: %s", account_id, e)
+        return int(data.get('ok', 0))
+    except Exception as e:
+        logger.error(f"CAS sync ошибка для {user_id}: {e}")
+        return 0
+
+
+def get_lols(account_id: int) -> int:
+    """
+    Синхронная проверка LOLS.
+
+    DEPRECATED: Используйте get_lols_async для асинхронного кода.
+    """
+    import requests
+
+    url = f"https://api.lols.bot/account?id={account_id}"
+    try:
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+        return int(data.get('banned', 0))
+    except Exception as e:
+        logger.error(f"LOLS sync ошибка для {account_id}: {e}")
         return 0

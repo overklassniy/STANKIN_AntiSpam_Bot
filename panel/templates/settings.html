@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <link rel="icon" href="{{ icon_path }}">
@@ -46,29 +46,28 @@
 <div class="container">
     <h1 id="table_header">{{ settings_text }}</h1>
     <form method="POST" action="/settings">
-        <form method="POST" action="/settings">
-            {% for field in fields %}
-            {% if field.type == 'checkbox' %}
-            <div class="form-group checkbox-group checkbox-wrapper">
-                <label for="{{ field.name }}">{{ field.name }}</label>
-                <input {% if not can_configure %}disabled{% endif %} type="checkbox" id="{{ field.name }}" name="{{ field.name }}" value="true" {% if field.value %}checked{% endif %}>
-            </div>
-            {% else %}
-            <div class="form-group">
-                <label for="{{ field.name }}">{{ field.name }}</label>
-                <input {% if not can_configure %}disabled{% endif %} class="text_input" type="{{ field.type }}" {% if field.type == "number" %}step="any"{% endif %} id="{{ field.name }}" name="{{ field.name }}" value="{{ field.value }}">
-            </div>
-            {% endif %}
-            {% endfor %}
-            {% with messages = get_flashed_messages() %}
-            {% if messages %}
-            <div class="notification">
-                {{ messages[0] | safe }}
-            </div>
-            {% endif %}
-            {% endwith %}
-            <button {% if not can_configure %}disabled{% endif %} class="save_config_button secolor noselect" role="button" type="submit">Сохранить</button>
-        </form>
+        {% for field in fields %}
+        {% if field.type == 'checkbox' %}
+        <div class="form-group checkbox-group checkbox-wrapper">
+            <input {% if not can_configure %}disabled{% endif %} type="checkbox" id="{{ field.name }}" name="{{ field.name }}" value="true" {% if field.value %}checked{% endif %}>
+            <label for="{{ field.name }}">{{ field.name }}</label>
+        </div>
+        {% else %}
+        <div class="form-group">
+            <label for="{{ field.name }}">{{ field.name }}</label>
+            <input {% if not can_configure %}disabled{% endif %} class="text_input" type="{{ field.type }}" {% if field.type == "number" %}step="any"{% endif %} id="{{ field.name }}" name="{{ field.name }}" value="{{ field.value }}">
+        </div>
+        {% endif %}
+        {% endfor %}
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        <div class="notification">
+            {{ messages[0] | safe }}
+        </div>
+        {% endif %}
+        {% endwith %}
+        <button {% if not can_configure %}disabled{% endif %} class="save_config_button secolor noselect" role="button" type="submit">Сохранить</button>
+    </form>
 </div>
 </body>
 </html>
