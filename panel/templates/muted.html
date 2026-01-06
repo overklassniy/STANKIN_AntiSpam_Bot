@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <link rel="icon" href="{{ icon_path }}">
@@ -64,18 +64,24 @@
     <!-- Навигация по страницам -->
     <div class="pagination">
         {% if prev_url %}
-            <a href="{{ prev_url }}" class="pagination-link animate">{{ prev_text }}</a>
+        <a href="{{ prev_url }}" class="pagination-link pagination-button prev animate">
+            <span class="btn-text">{{ prev_text }}</span>
+            <span class="btn-mobile">&lt;</span>
+        </a>
         {% endif %}
 
         <!-- Номера страниц -->
         {% for page_num in pages %}
-            <a href="{{ url_for('main.muted', page=page_num) }}" class="pagination-link animate {% if page_num == current_page %}active{% endif %}">
-                {{ page_num }}
-            </a>
+        <a href="{{ url_for('main.muted', page=page_num) }}" class="pagination-link animate {% if page_num == current_page %}active{% endif %}">
+            {{ page_num }}
+        </a>
         {% endfor %}
 
         {% if next_url %}
-            <a href="{{ next_url }}" class="pagination-link animate">{{ next_text }}</a>
+        <a href="{{ next_url }}" class="pagination-link pagination-button next animate">
+            <span class="btn-text">{{ next_text }}</span>
+            <span class="btn-mobile">&gt;</span>
+        </a>
         {% endif %}
     </div>
 </div>
