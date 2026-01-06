@@ -272,50 +272,50 @@ docker compose exec stankin-antispam-bot flask --app panel.app init_admin
 
 ```
 STANKIN_AntiSpam_Bot/
-├── run.py                  # Единая точка входа
-├── .env                    # Переменные окружения (не в Git)
-├── .env.example            # Пример конфигурации
-├── docker-compose.yml      # Docker Compose конфигурация
-├── Dockerfile              # Docker образ
+├── run.py                       # Единая точка входа
+├── .env                         # Переменные окружения (не в Git)
+├── .env.example                 # Пример конфигурации
+├── docker-compose.yml           # Docker Compose конфигурация
+├── Dockerfile                   # Docker образ
 │
-├── bot/                    # 🤖 Telegram бот
+├── bot/                         # Telegram бот
 │   ├── __init__.py
-│   ├── core.py             # Ядро: Bot, Dispatcher, константы
-│   ├── database.py         # Операции с БД (aiosqlite)
-│   ├── keyboards.py        # Построители клавиатур
-│   ├── notifications.py     # Форматирование и отправка уведомлений
-│   └── handlers/            # Обработчики событий
-│       ├── commands.py     # Команды (/start, /code, /get_password)
-│       ├── callbacks.py    # Callback-кнопки (mute, unmute, delete, not_spam)
-│       └── messages.py     # Проверка сообщений на спам
+│   ├── core.py                  # Ядро: Bot, Dispatcher, константы
+│   ├── database.py              # Операции с БД (aiosqlite)
+│   ├── keyboards.py             # Построители клавиатур
+│   ├── notifications.py         # Форматирование и отправка уведомлений
+│   └── handlers/                # Обработчики событий
+│       ├── commands.py          # Команды (/start, /code, /get_password)
+│       ├── callbacks.py         # Callback-кнопки (mute, unmute, delete, not_spam)
+│       └── messages.py          # Проверка сообщений на спам
 │
-├── panel/                  # 🌐 Веб-панель управления
-│   ├── app.py              # Flask приложение
-│   ├── auth.py             # Аутентификация
-│   ├── main.py             # Основные маршруты
-│   ├── db_models.py        # SQLAlchemy модели
-│   ├── static/             # CSS, JS, шрифты, изображения
+├── panel/                       # Веб-панель управления
+│   ├── app.py                   # Flask приложение
+│   ├── auth.py                  # Аутентификация
+│   ├── main.py                  # Основные маршруты
+│   ├── db_models.py             # SQLAlchemy модели
+│   ├── static/                  # CSS, JS, шрифты, изображения
 │   │   ├── styles/
 │   │   ├── scripts/
 │   │   ├── images/
 │   │   └── fonts/
-│   └── templates/          # HTML шаблоны (Jinja2)
+│   └── templates/               # HTML шаблоны (Jinja2)
 │
-├── utils/                   # 🔧 Утилиты
-│   ├── config.py           # Системная конфигурация (из .env)
-│   ├── logging.py          # Настройка логирования
-│   ├── helpers.py          # Вспомогательные функции
-│   ├── text.py             # Обработка текста
-│   ├── apis.py             # Внешние API (CAS, LOLS)
-│   └── ml.py               # ML предсказания (BERT, ChatGPT)
+├── utils/                       # Утилиты
+│   ├── config.py                # Системная конфигурация (из .env)
+│   ├── logging.py               # Настройка логирования
+│   ├── helpers.py               # Вспомогательные функции
+│   ├── text.py                  # Обработка текста
+│   ├── apis.py                  # Внешние API (CAS, LOLS)
+│   └── ml.py                    # ML предсказания (BERT, ChatGPT)
 │
-├── models/                  # 🧠 ML модели
+├── models/                      # ML модели
 │   └── finetuned_rubert_tiny2/
 │
-├── instance/                # 💾 SQLite БД
+├── instance/                    # SQLite БД
 │   └── db.sqlite
 │
-└── logs/                    # 📝 Логи
+└── logs/                        # Логи
     └── YYYY-MM-DD_HH-MM-SS.log
 ```
 
@@ -357,7 +357,7 @@ STANKIN_AntiSpam_Bot/
 ### Белый список пользователей
 
 Если сообщение ошибочно помечено как спам:
-1. Нажмите кнопку **"✅ Не спам"** в уведомлении
+1. Нажмите кнопку **"Не спам"** в уведомлении
 2. Пользователь автоматически добавляется в белый список
 3. Сообщения этого пользователя больше не проверяются на спам
 
