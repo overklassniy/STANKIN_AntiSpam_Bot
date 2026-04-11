@@ -137,9 +137,9 @@ def preprocess_text(
         text = PUNCTUATION_PATTERN.sub('', text)
         # Восстанавливаем placeholders
         if remove_links:
-            text = text.replace('link', '[LINK]')
+            text = text.replace('LINK', '[LINK]')
         if remove_tags:
-            text = text.replace('tag', '[TAG]')
+            text = text.replace('TAG', '[TAG]')
 
     if remove_emoji:
         text = remove_emojis(text)

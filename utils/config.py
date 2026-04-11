@@ -37,6 +37,11 @@ MODELS_DIR = str(BASE_DIR / os.getenv('MODELS_DIR', 'models'))
 BERT_MODEL = os.getenv('BERT_MODEL', str(Path(MODELS_DIR) / 'finetuned_rubert_tiny2'))
 
 
+# ПРОКСИ
+# SOCKS5 прокси для Telegram Bot API (опционально)
+PROXY_URL: Optional[str] = os.getenv('PROXY_URL')
+
+
 # TELEGRAM НАСТРОЙКИ
 # Режим тестирования
 TESTING = os.getenv('TESTING', 'false').lower() in ('true', '1', 'yes')

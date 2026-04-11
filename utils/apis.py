@@ -15,6 +15,24 @@ from utils.logging import logger
 # Таймаут для HTTP-запросов
 DEFAULT_TIMEOUT = aiohttp.ClientTimeout(total=10)
 
+_shared_session: Optional[aiohttp.ClientSession] = None
+
+
+async def get_shared_session() -> aiohttp.ClientSession:
+    """Возвращает общую aiohttp-сессию, создавая при первом вызове."""
+    global _shared_session
+    if _shared_session is None or _shared_session.closed:
+        _shared_session = aiohttp.ClientSession(timeout=DEFAULT_TIMEOUT)
+    return _shared_session
+
+
+async def close_shared_session() -> None:
+    """Закрывает общую aiohttp-сессию (вызывать при остановке бота)."""
+    global _shared_session
+    if _shared_session and not _shared_session.closed:
+        await _shared_session.close()
+        _shared_session = None
+
 
 async def get_cas_async(user_id: int) -> int:
     """
@@ -33,13 +51,13 @@ async def get_cas_async(user_id: int) -> int:
     logger.debug(f"CAS проверка пользователя {user_id}")
 
     try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url, timeout=DEFAULT_TIMEOUT) as response:
-                response.raise_for_status()
-                data = await response.json()
-                result = int(data.get('ok', 0))
-                logger.debug(f"CAS результат для {user_id}: {result}")
-                return result
+        session = await get_shared_session()
+        async with session.get(url) as response:
+            response.raise_for_status()
+            data = await response.json()
+            result = int(data.get('ok', 0))
+            logger.debug(f"CAS результат для {user_id}: {result}")
+            return result
     except aiohttp.ClientError as e:
         logger.error(f"CAS ошибка для {user_id}: {e}")
         return 0
@@ -65,13 +83,13 @@ async def get_lols_async(account_id: int) -> int:
     logger.debug(f"LOLS проверка аккаунта {account_id}")
 
     try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url, timeout=DEFAULT_TIMEOUT) as response:
-                response.raise_for_status()
-                data = await response.json()
-                result = int(data.get('banned', 0))
-                logger.debug(f"LOLS результат для {account_id}: {result}")
-                return result
+        session = await get_shared_session()
+        async with session.get(url) as response:
+            response.raise_for_status()
+            data = await response.json()
+            result = int(data.get('banned', 0))
+            logger.debug(f"LOLS результат для {account_id}: {result}")
+            return result
     except aiohttp.ClientError as e:
         logger.error(f"LOLS ошибка для {account_id}: {e}")
         return 0

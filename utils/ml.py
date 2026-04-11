@@ -207,6 +207,40 @@ def get_all_sklearn_predictions(text: str) -> Dict[str, Dict[str, Any]]:
     return predictions
 
 
+def ensemble_confirm_spam(text: str, min_models: int = 2) -> bool:
+    """
+    Проверяет через sklearn-ансамбль, подтверждается ли спам.
+    Используется в серой зоне BERT (0.94-0.98).
+
+    Args:
+        text: Текст сообщения
+        min_models: Минимальное число моделей, подтверждающих спам
+
+    Returns:
+        True если достаточное число моделей подтвердили спам
+    """
+    try:
+        predictions = get_all_sklearn_predictions(text)
+        if 'error' in predictions:
+            logger.warning(f"Ансамбль: ошибка получения sklearn-предсказаний")
+            return False
+
+        spam_votes = sum(
+            1 for name, pred in predictions.items()
+            if isinstance(pred, dict) and 'prediction' in pred and pred['prediction'] == 1
+        )
+        total = sum(
+            1 for name, pred in predictions.items()
+            if isinstance(pred, dict) and 'prediction' in pred
+        )
+
+        logger.debug(f"Ансамбль: {spam_votes}/{total} моделей голосуют за спам")
+        return spam_votes >= min_models
+    except Exception as e:
+        logger.error(f"Ошибка ансамблирования: {e}")
+        return False
+
+
 async def chatgpt_predict(text: str) -> int:
     """
     Проверяет текст на спам с помощью ChatGPT.

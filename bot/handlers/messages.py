@@ -71,8 +71,14 @@ async def analyze_message(text: str, author_id: int) -> dict:
     result["bert_prediction"] = bert_predict(text, bert_threshold)
 
     # Определяем уровень уверенности
-    if result["bert_prediction"][0] and (max(result["bert_prediction"][1]) > bert_sure_threshold):
+    bert_score = max(result["bert_prediction"][1])
+    if result["bert_prediction"][0] and bert_score > bert_sure_threshold:
         result["ausure"] = True
+    elif result["bert_prediction"][0] and bert_threshold <= bert_score <= bert_sure_threshold:
+        from utils.ml import ensemble_confirm_spam
+        if ensemble_confirm_spam(text, min_models=2):
+            result["ausure"] = True
+            logger.info(f"Ансамбль подтвердил спам в серой зоне (BERT score={bert_score:.4f})")
 
     # Проверка через внешние API
     if check_cas:
@@ -93,7 +99,8 @@ async def analyze_message(text: str, author_id: int) -> dict:
 
 def determine_spam_status(
     analysis: dict,
-    has_reply_markup: bool
+    has_reply_markup: bool,
+    is_forwarded: bool = False
 ) -> Union[bool, str]:
     """
     Определяет статус спама на основе анализа.
@@ -112,6 +119,10 @@ def determine_spam_status(
         return False
 
     if bool(analysis["bert_prediction"][0]):
+        return True
+
+    # Пересланное сообщение с подтверждением от CAS/LOLS — спам
+    if is_forwarded and (analysis["cas"] or analysis["lols"]):
         return True
 
     if analysis["cas"] or analysis["lols"] or analysis["chatgpt"]:
@@ -146,14 +157,15 @@ async def handle_message(message: types.Message) -> None:
     # Получаем настройки
     collect_all = await get_setting('COLLECT_ALL_MESSAGES', False)
 
-    # Сбор сообщений (если включено)
-    if collect_all and message.text:
+    # Сбор сообщений (если включено) — собираем и text, и caption
+    collect_text = message.text or message.caption
+    if collect_all and collect_text:
         try:
             await add_collected_message(
                 chat_id=message.chat.id,
                 user_id=author_id,
                 username=author_name,
-                message_text=message.text
+                message_text=collect_text
             )
         except Exception as e:
             logger.error(f"Ошибка при сохранении сообщения: {e}")
@@ -188,11 +200,14 @@ async def handle_message(message: types.Message) -> None:
         check_reply_markup = await get_setting('CHECK_REPLY_MARKUP', True)
         has_reply_markup = bool(message.reply_markup) if check_reply_markup else None
 
+        # Определяем, является ли сообщение пересланным
+        is_forwarded = message.forward_from is not None or message.forward_from_chat is not None
+
         # Анализируем сообщение
         analysis = await analyze_message(message_text, author_id)
 
         # Определяем статус спама
-        is_spam = determine_spam_status(analysis, has_reply_markup or False)
+        is_spam = determine_spam_status(analysis, has_reply_markup or False, is_forwarded=is_forwarded)
 
         if not is_spam:
             logger.debug(f"Сообщение от {author_id} не является спамом")

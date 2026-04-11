@@ -66,6 +66,7 @@ models_*/
 ipynb/.ipynb_checkpoints/
 ipynb/rb_results/
 ipynb/*.onnx
+ipynb/*.py
 
 # Docker
 docker-entrypoint.sh
@@ -101,6 +102,7 @@ previous_models/
 # Other
 utils/parse_lols.py
 utils/parsed_data_*.txt
+utils/sql_structure.py
 panel/init_db.py
 panel/static/images/stankin-logo.png
 panel/static/images/sas_logo_tg_no_bg.png
