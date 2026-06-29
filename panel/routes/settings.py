@@ -20,6 +20,9 @@ from core.logging import logger
 
 router = APIRouter()
 
+# Настройки, отображаемые на вкладке «Системные»
+SYSTEM_SETTINGS = {'PER_PAGE', 'BACKUP_ENABLED', 'BACKUP_START_TIME', 'BACKUP_INTERVAL_HOURS'}
+
 
 def _get_available_bert_models() -> List[str]:
     """Возвращает список доступных BERT-моделей из директорий models и models/compressed.
@@ -90,6 +93,7 @@ async def settings_page(
     # Преобразуем настройки в список полей для шаблона (только для суперпользователя)
     bert_models = _get_available_bert_models()
     fields = []
+    system_fields = []
     if user['is_superadmin']:
         for key in DEFAULT_SETTINGS:
             value = global_settings.get(key, DEFAULT_SETTINGS[key])
@@ -105,11 +109,14 @@ async def settings_page(
                 'name': key,
                 'value': value,
                 'type': field_type,
-                'description': SETTING_DESCRIPTIONS.get(key, ''),
+                'description': SETTING_DESCRIPTIONS.get(key, key),
             }
             if field_type == 'select':
                 field['options'] = bert_models
-            fields.append(field)
+            if key in SYSTEM_SETTINGS:
+                system_fields.append(field)
+            else:
+                fields.append(field)
 
     templates = request.app.state.templates
     return templates.TemplateResponse(
@@ -126,6 +133,7 @@ async def settings_page(
             'is_superadmin': user['is_superadmin'],
             'can_configure': user['is_superadmin'],
             'fields': fields,
+            'system_fields': system_fields,
             'bert_models': bert_models,
         }
     )

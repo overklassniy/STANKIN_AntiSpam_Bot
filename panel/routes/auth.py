@@ -36,9 +36,10 @@ TITLE = 'СТАНКИН Анти-Спам'
 def verify_password(password: str, stored_hash: str) -> bool:
     """Проверяет пароль против хеша.
 
-    Поддерживает два формата хеша:
+    Поддерживает три формата хеша:
     * scrypt — собственный формат `scrypt$параметры$salt$hash`;
-    * werkzeug — устаревший формат из предыдущей версии.
+    * werkzeug scrypt — формат `scrypt:N:r:p$salt$hash` (без зависимости werkzeug);
+    * werkzeug — устаревший формат из предыдущей версии (через werkzeug, если установлен).
 
     Аргументы:
         password (str): Введённый пароль.
@@ -72,7 +73,29 @@ def verify_password(password: str, stored_hash: str) -> bool:
         except Exception:
             return False
 
-    # Совместимость со старым werkzeug scrypt форматом
+    if stored_hash.startswith('scrypt:'):
+        # Формат werkzeug: scrypt:N:r:p$salt$hash
+        try:
+            method, salt_hash = stored_hash.split('$', 1)
+            salt_b64, expected_hash = salt_hash.split('$', 1)
+            _, n, r, p = method.split(':')
+            n, r, p = int(n), int(r), int(p)
+
+            import base64
+            salt = base64.b64decode(salt_b64)
+            dk = hashlib.scrypt(
+                password.encode(),
+                salt=salt,
+                n=n,
+                r=r,
+                p=p,
+                dklen=64
+            )
+            return base64.b64encode(dk).decode() == expected_hash
+        except Exception:
+            return False
+
+    # Совместимость с другими устаревшими форматами werkzeug
     try:
         from werkzeug.security import check_password_hash
         return check_password_hash(stored_hash, password)

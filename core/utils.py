@@ -150,3 +150,30 @@ def escape_html(text: str) -> str:
         str: Текст с экранированными HTML-символами.
     """
     return text.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+
+
+def get_visible_pages(current: int, total: int, visible: int = 5) -> list:
+    """Возвращает список видимых номеров страниц для пагинации с ротацией.
+
+    Показывает не более visible страниц, центрированных вокруг текущей.
+    На границах диапазон сдвигается, чтобы всегда показывать visible страниц.
+
+    Аргументы:
+        current (int): Текущая страница.
+        total (int): Всего страниц.
+        visible (int): Сколько страниц показывать одновременно.
+
+    Возвращаемое значение:
+        list: Список номеров видимых страниц.
+    """
+    if total <= visible:
+        return list(range(1, total + 1))
+
+    half = visible // 2
+    start = max(1, current - half)
+    end = min(total, start + visible - 1)
+
+    if end - start + 1 < visible:
+        start = max(1, end - visible + 1)
+
+    return list(range(start, end + 1))

@@ -50,6 +50,9 @@ ENTRYPOINT []
 COPY --from=libgomp-builder /usr/lib/libgomp.so.1 /usr/lib/libgomp.so.1
 COPY --from=deps-builder /opt/venv /opt/venv
 
+USER root
+RUN apk add --no-cache postgresql-client
+
 ENV PATH="/opt/venv/bin:/usr/bin:$PATH"
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1

@@ -157,6 +157,12 @@ export const api = {
     });
   },
 
+  async deleteChat(chatPk: number): Promise<void> {
+    await fetchJson(`${API_BASE}/chats/${chatPk}`, {
+      method: 'DELETE',
+    });
+  },
+
   async getCurrentUser(): Promise<UserInfo | null> {
     try {
       return await fetchJson(`${API_BASE}/auth/me`);
@@ -174,6 +180,12 @@ export const api = {
 
   async logout(): Promise<void> {
     await fetchJson(`${API_BASE}/auth/logout`, {
+      method: 'POST',
+    });
+  },
+
+  async createBackup(): Promise<{ status: string; message: string }> {
+    return fetchJson(`${API_BASE}/backup`, {
       method: 'POST',
     });
   },
