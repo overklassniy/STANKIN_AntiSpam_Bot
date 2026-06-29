@@ -1,0 +1,38 @@
+# Git
+.git/
+
+# Node.js: зависимости (устанавливаются в frontend-стейдже)
+node_modules/
+
+# Python: виртуальное окружение и кеш
+.venv/
+__pycache__/
+*.pyc
+*$py.class
+*.so
+
+# Runtime-данные (монтируются через volumes в docker-compose)
+logs/
+data/
+models/
+chat_exports/
+instance/
+
+# Файлы окружения (секреты)
+.env
+.env.example
+
+# IDE
+.idea/
+.info/
+
+# Вспомогательная директория с исходниками моделей
+src/
+
+# Скомпилированные фронтенд-ассеты (собираются в frontend-стейдже Dockerfile)
+panel/static/js/
+panel/static/styles/
+
+# Файлы конфигурации, не нужные в образе
+.gitignore
+package-lock.json
