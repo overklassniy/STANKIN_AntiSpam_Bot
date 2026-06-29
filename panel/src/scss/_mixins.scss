@@ -1,0 +1,59 @@
+// Миксины
+
+@use 'variables' as *;
+
+@mixin glass-panel {
+  background-color: var(--color-surface);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: 0 0 20px 1px var(--color-shadow);
+  border-radius: var(--radius);
+  border: 1px solid var(--color-border-light);
+}
+
+@mixin noselect {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+@mixin animate {
+  transition: $default-time;
+
+  &:hover {
+    transition: $default-time;
+  }
+
+  &::after {
+    transition: $default-time;
+  }
+
+  &::before {
+    transition: $default-time;
+  }
+
+  &:checked {
+    transition: $default-time;
+  }
+}
+
+@mixin respond-to($bp) {
+  @media (max-width: $bp) {
+    @content;
+  }
+}
+
+@mixin respond-to-landscape {
+  @media (max-height: $bp-landscape) and (orientation: landscape) {
+    @content;
+  }
+}
+
+@mixin reduced-motion {
+  @media (prefers-reduced-motion: reduce) {
+    @content;
+  }
+}

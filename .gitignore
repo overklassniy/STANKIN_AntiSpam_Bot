@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Виртуальное окружение
+.venv/
+
+# IDE
+.idea/
+
+# Файлы окружения и конфигурации
+.env
+
+# Логи
+logs/
+*.log
+
+# Локальные базы данных
+instance/
+
+# ML-модели
+models/
+
+# Экспорты чатов
+chat_exports/
+
+# Данные
+data/
+
+# Node.js
+node_modules/
+
+# Скомпилированные фронтенд-ассеты
+panel/static/js/
+panel/static/styles/

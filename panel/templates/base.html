@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="{{ static_url('/static/images/stankin-logo.svg') }}">
+    <meta property="og:title" content="{{ og_title }}">
+    <meta property="og:description" content="{{ og_description }}">
+    <meta property="og:image" content="{{ static_url('/static/images/stankin-logo.svg') }}">
+    <meta name="theme-color" content="#6491F0">
+    <meta name="color-scheme" content="light dark">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <link rel="stylesheet" href="{{ static_url('/static/styles/tailwind.css') }}">
+    <link rel="stylesheet" href="{{ static_url('/static/styles/main.css') }}">
+    <script>
+        (function() {
+            var saved = localStorage.getItem('theme');
+            var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            if (saved === 'dark' || (!saved && prefersDark)) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            }
+        })();
+    </script>
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+<img class="background" src="{{ static_url('/static/images/stankin_max.svg') }}" alt="" aria-hidden="true" fetchpriority="low">
+<a href="#main-content" class="skip-link">Перейти к основному содержимому</a>
+{% block header %}
+<header>
+    <nav aria-label="Главная навигация">
+        <a class="logo" href="/" aria-label="На главную">СТАНКИН Анти-Спам</a>
+        <button class="hamburger" aria-label="Открыть меню" aria-expanded="false" aria-controls="dropdown-menu">&#9776;</button>
+        <div class="main-menu">
+            <div class="left-menu">
+                <a href="{{ github_url }}" target="_blank" rel="noopener">О системе</a>
+                <a href="/" {% if active_page == 'spam' %}aria-current="page"{% endif %}>Обнаруженный спам</a>
+                <a href="/muted" {% if active_page == 'muted' %}aria-current="page"{% endif %}>Ограниченные пользователи</a>
+                <a href="/settings" {% if active_page == 'settings' %}aria-current="page"{% endif %}>Настройки</a>
+            </div>
+            <div class="right-menu">
+                <button class="theme-toggle" id="theme-toggle" aria-label="Переключить тему">
+                    <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                    </svg>
+                    <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"/>
+                        <line x1="12" y1="1" x2="12" y2="3"/>
+                        <line x1="12" y1="21" x2="12" y2="23"/>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                        <line x1="1" y1="12" x2="3" y2="12"/>
+                        <line x1="21" y1="12" x2="23" y2="12"/>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                    </svg>
+                </button>
+                <a href="/logout">Выйти</a>
+            </div>
+        </div>
+        <div class="dropdown-menu" id="dropdown-menu">
+            <a href="{{ github_url }}" target="_blank" rel="noopener">О системе</a>
+            <a href="/" {% if active_page == 'spam' %}aria-current="page"{% endif %}>Обнаруженный спам</a>
+            <a href="/muted" {% if active_page == 'muted' %}aria-current="page"{% endif %}>Ограниченные пользователи</a>
+            <a href="/settings" {% if active_page == 'settings' %}aria-current="page"{% endif %}>Настройки</a>
+            <a href="/logout">Выйти</a>
+        </div>
+    </nav>
+</header>
+{% endblock %}
+<main id="main-content">
+{% block body %}{% endblock %}
+</main>
+<div class="toast-container" id="toast-container" role="status" aria-live="polite" aria-atomic="true"></div>
+</body>
+</html>

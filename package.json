@@ -1,0 +1,24 @@
+{
+  "name": "stankin-antispam-panel",
+  "version": "3.0.0",
+  "description": "Фронтенд веб-панели СТАНКИН Анти-Спам",
+  "private": true,
+  "scripts": {
+    "build:tailwind": "postcss panel/src/css/tailwind.css -o panel/static/styles/tailwind.css --no-map",
+    "build:scss": "sass panel/src/scss/main.scss panel/static/styles/main.css --style=compressed --no-source-map",
+    "build:ts": "tsc --project panel/src/ts/tsconfig.json",
+    "build": "npm run build:tailwind && npm run build:scss && npm run build:ts",
+    "watch:tailwind": "postcss panel/src/css/tailwind.css -o panel/static/styles/tailwind.css --watch --no-map",
+    "watch:scss": "sass --watch panel/src/scss/main.scss panel/static/styles/main.css",
+    "watch:ts": "tsc --project panel/src/ts/tsconfig.json --watch",
+    "watch": "npm run watch:tailwind & npm run watch:scss & npm run watch:ts"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.1",
+    "postcss": "^8.5.16",
+    "postcss-cli": "^11.0.1",
+    "sass": "^1.101.0",
+    "tailwindcss": "^4.3.2",
+    "typescript": "^6.0.3"
+  }
+}

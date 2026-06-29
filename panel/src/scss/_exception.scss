@@ -1,0 +1,42 @@
+// Страница ошибки
+
+@use 'variables' as *;
+
+.center {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+  text-align: center;
+
+  h1 {
+    font-family: var(--font-bold);
+    font-size: 24pt;
+    margin-bottom: 1.5rem;
+  }
+
+  button {
+    background: var(--color-primary);
+    color: var(--color-white);
+    padding: 13px 24px;
+    border-radius: var(--radius-sm);
+    outline: none;
+    font-size: 16pt;
+    letter-spacing: 1.5px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all var(--transition);
+    border: none;
+
+    &:hover {
+      box-shadow: var(--shadow-md);
+      transform: translateY(-1px);
+      background: var(--color-primary-light);
+    }
+
+    &:active {
+      transform: scale(0.98);
+    }
+  }
+}

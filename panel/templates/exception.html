@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block body %}
+<div class="container">
+    <div class="center">
+        <h1>{{ oops_text | safe }}</h1>
+        <button onclick="location.href='/';" class="btn btn-primary" type="button">Вернуться на главную</button>
+    </div>
+</div>
+{% endblock %}

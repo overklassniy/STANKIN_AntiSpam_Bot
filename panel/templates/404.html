@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block extra_head %}
+<style>
+    html, body {
+        overflow: hidden !important;
+    }
+    .error-page-outer {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 1rem;
+        margin: 0;
+        max-width: none;
+        background-color: var(--color-surface);
+        backdrop-filter: blur(5px) saturate(180%);
+        -webkit-backdrop-filter: blur(5px) saturate(180%);
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+        overflow: hidden;
+    }
+    .error-page {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem 1rem;
+        width: 100%;
+        max-width: 35rem;
+    }
+    .error-code {
+        font-family: var(--font-bold);
+        font-size: 96pt;
+        line-height: 1;
+        background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 0.5rem;
+        letter-spacing: -0.04em;
+    }
+    .error-title {
+        font-family: var(--font-bold);
+        font-size: 22pt;
+        margin-bottom: 0.75rem;
+        text-align: center;
+    }
+    .error-description {
+        color: var(--color-text-secondary);
+        font-size: 14pt;
+        text-align: center;
+        max-width: 420px;
+        margin-bottom: 2rem;
+        line-height: 1.5;
+    }
+    .error-actions {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    @media (max-width: 600px) {
+        .error-code { font-size: 64pt; }
+        .error-title { font-size: 18pt; }
+        .error-description { font-size: 12pt; }
+    }
+</style>
+{% endblock %}
+{% block body %}
+<div class="error-page-outer">
+    <div class="error-page">
+        <div class="error-code">404</div>
+        <h1 class="error-title">Страница не найдена</h1>
+        <p class="error-description">Запрошенная страница не существует или была перемещена. Проверьте адрес или вернитесь на главную.</p>
+        <div class="error-actions">
+            <button onclick="location.href='/';" class="btn btn-primary" type="button">Вернуться на главную</button>
+            <button onclick="history.back();" class="btn btn-ghost" type="button">Назад</button>
+        </div>
+    </div>
+</div>
+{% endblock %}

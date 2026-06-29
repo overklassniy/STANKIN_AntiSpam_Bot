@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block extra_head %}
+    <script type="module" src="{{ static_url('/static/js/settings-page.js') }}" defer></script>
+{% endblock %}
+{% block body %}
+<div class="container">
+    <h1 id="table_header">Настройки</h1>
+
+    <div class="settings-tabs" role="tablist">
+        {% if is_superadmin %}
+        <button class="settings-tab active" role="tab" aria-selected="true" data-tab="global">Глобальные</button>
+        <button class="settings-tab" role="tab" aria-selected="false" data-tab="chats">Чаты</button>
+        {% else %}
+        <button class="settings-tab active" role="tab" aria-selected="true" data-tab="chats">Чаты</button>
+        {% endif %}
+    </div>
+
+    {% if is_superadmin %}
+    <div class="settings-panel active" data-panel="global" role="tabpanel">
+        <form id="settings-form" method="POST" action="/settings" data-chat-pk="">
+            <fieldset {% if not can_configure %}disabled{% endif %}>
+            {% for field in fields %}
+            {% if field.type == 'checkbox' %}
+            <div class="form-group checkbox-group checkbox-wrapper">
+                <input type="checkbox" id="{{ field.name }}" name="{{ field.name }}" value="true" {% if field.value %}checked{% endif %}>
+                <label for="{{ field.name }}" title="{{ field.description }}">{{ field.name }}</label>
+            </div>
+            {% elif field.type == 'select' %}
+            <div class="form-group">
+                <label for="{{ field.name }}" title="{{ field.description }}">{{ field.name }}</label>
+                <select class="text_input" id="{{ field.name }}" name="{{ field.name }}">
+                    {% for option in field.options %}
+                    <option value="{{ option }}" {% if field.value == option %}selected{% endif %}>{{ option }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% else %}
+            <div class="form-group">
+                <label for="{{ field.name }}" title="{{ field.description }}">{{ field.name }}</label>
+                <input class="text_input" type="{{ field.type }}" {% if field.type == "number" %}step="any"{% endif %} id="{{ field.name }}" name="{{ field.name }}" value="{{ field.value }}">
+            </div>
+            {% endif %}
+            {% endfor %}
+            <div id="settings-notification" class="notification" style="display:none" role="status" aria-live="polite"></div>
+            </fieldset>
+            <button {% if not can_configure %}disabled{% endif %} class="save_config_button" type="submit">Сохранить</button>
+        </form>
+    </div>
+    {% endif %}
+
+    <div class="settings-panel {% if not is_superadmin %}active{% endif %}" data-panel="chats" role="tabpanel">
+        {% if is_superadmin %}
+        <form id="add-chat-form" class="add-chat-form">
+            <div class="form-group">
+                <label for="chat-id-input">ID чата</label>
+                <input class="text_input" type="number" id="chat-id-input" name="chat_id" placeholder="Например: -1001234567890" required>
+            </div>
+            <button class="save_config_button" type="submit">Добавить чат</button>
+        </form>
+        <div id="add-chat-notification" class="notification" style="display:none" role="status" aria-live="polite"></div>
+        {% endif %}
+
+        <div class="chat-settings-list" id="chat-settings-list">
+            <p class="chat-settings-empty">Загрузка списка чатов...</p>
+        </div>
+
+        <div id="chat-settings-container" style="display:none">
+            <h2 id="chat-settings-title"></h2>
+            <form id="chat-settings-form" data-chat-pk="">
+                <fieldset>
+                    <div id="chat-settings-fields"></div>
+                    <div id="chat-settings-notification" class="notification" style="display:none" role="status" aria-live="polite"></div>
+                </fieldset>
+                <button class="save_config_button" type="submit">Сохранить настройки чата</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
