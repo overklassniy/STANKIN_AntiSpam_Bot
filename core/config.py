@@ -26,6 +26,9 @@ LOGS_DIR = str(BASE_DIR / os.getenv('LOGS_DIR', 'logs'))
 # Директория с ML моделями (абсолютный путь)
 MODELS_DIR = str(BASE_DIR / os.getenv('MODELS_DIR', 'models'))
 
+# Директория со сжатыми BERT-моделями (fp16, int8, onnx)
+COMPRESSED_MODELS_DIR = str(Path(MODELS_DIR) / 'compressed')
+
 # Путь к BERT модели
 BERT_MODEL = os.getenv('BERT_MODEL', str(Path(MODELS_DIR) / 'finetuned_rubert_tiny2'))
 

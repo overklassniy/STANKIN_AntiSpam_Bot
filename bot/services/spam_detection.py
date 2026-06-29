@@ -34,6 +34,11 @@ def _get_classifier(model_path: str):
 
     При смене пути модели кеш сбрасывается и модель перезагружается.
 
+    Поддерживаются два формата моделей:
+    - PyTorch / safetensors: загружается через transformers.pipeline.
+    - ONNX (model.onnx, model_quantized.onnx): загружается через
+      optimum.onnxruntime.ORTModelForSequenceClassification.
+
     Аргументы:
         model_path (str): Абсолютный путь к директории модели.
 
@@ -51,23 +56,40 @@ def _get_classifier(model_path: str):
     _classifier = None
     _classifier_model_name = model_path
 
+    model_dir = Path(model_path)
+    has_onnx = any(model_dir.glob('*.onnx'))
+
     try:
-        import torch
-        if not hasattr(torch, '__version__'):
-            raise ImportError("torch не установлен корректно")
+        if has_onnx:
+            from optimum.onnxruntime import ORTModelForSequenceClassification
+            from transformers import AutoTokenizer, pipeline
 
-        from transformers import pipeline
+            logger.info(f"Загрузка ONNX BERT модели: {model_path}")
+            model = ORTModelForSequenceClassification.from_pretrained(model_path)
+            tokenizer = AutoTokenizer.from_pretrained(model_path)
+            _classifier = pipeline(
+                "text-classification",
+                model=model,
+                tokenizer=tokenizer,
+                device=-1,
+            )
+        else:
+            import torch
+            if not hasattr(torch, '__version__'):
+                raise ImportError("torch не установлен корректно")
 
-        logger.info(f"Загрузка BERT модели: {model_path}")
-        _classifier = pipeline(
-            "text-classification",
-            model=model_path,
-            tokenizer=model_path,
-            device=-1,
-        )
+            from transformers import pipeline
+
+            logger.info(f"Загрузка BERT модели: {model_path}")
+            _classifier = pipeline(
+                "text-classification",
+                model=model_path,
+                tokenizer=model_path,
+                device=-1,
+            )
     except ImportError as e:
-        logger.error(f"Ошибка импорта torch/transformers: {e}")
-        logger.error("Установите зависимости: pip install torch transformers")
+        logger.error(f"Ошибка импорта ML-зависимостей: {e}")
+        logger.error("Установите зависимости: pip install torch transformers optimum[onnxruntime]")
         raise RuntimeError(f"Не удалось загрузить ML модели: {e}") from e
     except Exception as e:
         logger.error(f"Ошибка загрузки BERT модели {model_path}: {e}")
