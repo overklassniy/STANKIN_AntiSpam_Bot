@@ -1,0 +1,6 @@
+# ML-зависимости: только ONNX Runtime
+# Используется с Dockerfile (главный, ONNX-only)
+
+transformers
+optimum[onnxruntime]
+onnxruntime

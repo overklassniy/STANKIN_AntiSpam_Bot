@@ -1,0 +1,7 @@
+# ML-зависимости: Torch CUDA + ONNX Runtime
+# Используется с Dockerfile.torch-cuda
+# torch устанавливается через --index-url https://download.pytorch.org/whl/cu130
+
+transformers[torch]
+optimum[onnxruntime]
+onnxruntime

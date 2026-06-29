@@ -1,0 +1,56 @@
+# Dockerfile — главный образ (ONNX-only, без torch)
+
+# Стадия 1: сборка фронтенда
+FROM node:22-slim AS frontend-builder
+
+WORKDIR /build
+
+COPY package.json package-lock.json ./
+RUN npm ci
+
+COPY postcss.config.js ./
+COPY panel/src/ ./panel/src/
+COPY panel/templates/ ./panel/templates/
+
+RUN npm run build
+
+# Стадия 2: установка Python-зависимостей
+FROM python:3.14-slim AS deps-builder
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends gcc g++ && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+WORKDIR /build
+
+COPY requirements.txt requirements-ml-onnx.txt ./
+RUN pip install --no-cache-dir -r requirements.txt -r requirements-ml-onnx.txt
+
+# Стадия 3: runtime
+FROM python:3.14-slim AS runtime
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends libgomp1 && \
+    rm -rf /var/lib/apt/lists/*
+
+COPY --from=deps-builder /opt/venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+WORKDIR /app
+
+COPY core/ ./core/
+COPY bot/ ./bot/
+COPY panel/ ./panel/
+COPY run.py ./
+
+COPY --from=frontend-builder /build/panel/static/js/ ./panel/static/js/
+COPY --from=frontend-builder /build/panel/static/styles/ ./panel/static/styles/
+
+RUN mkdir -p logs data
+
+EXPOSE 12523
+
+CMD ["python", "run.py"]
