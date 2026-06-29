@@ -1,4 +1,4 @@
-# Dockerfile — главный образ (ONNX-only, без torch)
+# Dockerfile — главный образ (ONNX Runtime, без torch)
 
 # Стадия 1: сборка фронтенда
 FROM node:22-slim AS frontend-builder
@@ -21,23 +21,38 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends gcc g++ && \
     rm -rf /var/lib/apt/lists/*
 
-RUN python -m venv /opt/venv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+
+RUN uv venv /opt/venv --no-seed
 ENV PATH="/opt/venv/bin:$PATH"
 
 WORKDIR /build
 
 COPY requirements.txt requirements-ml-onnx.txt ./
-RUN pip install --no-cache-dir -r requirements.txt -r requirements-ml-onnx.txt
+RUN uv pip install --no-cache -r requirements.txt && \
+    uv pip install --no-cache "transformers<4.58.0" onnxruntime onnx && \
+    uv pip uninstall -y pip setuptools 2>/dev/null; true
 
-# Стадия 3: runtime
-FROM python:3.14-slim AS runtime
+# Исправляем symlink python в venv на путь Chainguard runtime
+RUN ln -sf /usr/bin/python /opt/venv/bin/python && \
+    ln -sf /usr/bin/python3 /opt/venv/bin/python3 && \
+    ln -sf /usr/bin/python3.14 /opt/venv/bin/python3.14
 
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends libgomp1 && \
-    rm -rf /var/lib/apt/lists/*
+# Стадия 3: получение libgomp из dev-образа
+FROM cgr.dev/chainguard/python:latest-dev AS libgomp-builder
+USER root
+RUN apk add --no-cache libgomp
 
+# Стадия 4: runtime на Chainguard (минимальный, без shell)
+FROM cgr.dev/chainguard/python:latest AS runtime
+
+ENTRYPOINT []
+COPY --from=libgomp-builder /usr/lib/libgomp.so.1 /usr/lib/libgomp.so.1
 COPY --from=deps-builder /opt/venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
+
+ENV PATH="/opt/venv/bin:/usr/bin:$PATH"
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
@@ -49,8 +64,6 @@ COPY run.py ./
 COPY --from=frontend-builder /build/panel/static/js/ ./panel/static/js/
 COPY --from=frontend-builder /build/panel/static/styles/ ./panel/static/styles/
 
-RUN mkdir -p logs data
-
 EXPOSE 12523
 
-CMD ["python", "run.py"]
+CMD ["/opt/venv/bin/python", "run.py"]

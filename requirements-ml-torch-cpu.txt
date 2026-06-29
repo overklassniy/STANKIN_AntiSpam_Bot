@@ -1,7 +1,0 @@
-# ML-зависимости: Torch CPU + ONNX Runtime
-# Используется с Dockerfile.torch-cpu
-# torch устанавливается через --index-url https://download.pytorch.org/whl/cpu
-
-transformers[torch]
-optimum[onnxruntime]
-onnxruntime

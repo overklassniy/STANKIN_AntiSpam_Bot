@@ -11,7 +11,7 @@ import pickle
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
-import pandas as pd
+import numpy as np
 from dotenv import load_dotenv
 from scipy.sparse import hstack
 
@@ -35,15 +35,15 @@ def _get_classifier(model_path: str):
     При смене пути модели кеш сбрасывается и модель перезагружается.
 
     Поддерживаются два формата моделей:
-    - PyTorch / safetensors: загружается через transformers.pipeline.
     - ONNX (model.onnx, model_quantized.onnx): загружается через
-      optimum.onnxruntime.ORTModelForSequenceClassification.
+      onnxruntime.InferenceSession и transformers.AutoTokenizer.
+    - PyTorch / safetensors: загружается через transformers.pipeline.
 
     Аргументы:
         model_path (str): Абсолютный путь к директории модели.
 
     Возвращаемое значение:
-        classifier: Pipeline для классификации текста.
+        classifier: Объект классификатора для predict_spam.
 
     Исключения:
         RuntimeError: Если не удалось загрузить ML-модели.
@@ -57,27 +57,32 @@ def _get_classifier(model_path: str):
     _classifier_model_name = model_path
 
     model_dir = Path(model_path)
-    has_onnx = any(model_dir.glob('*.onnx'))
+    onnx_files = list(model_dir.glob('*.onnx'))
+    has_onnx = bool(onnx_files)
 
     try:
         if has_onnx:
-            from optimum.onnxruntime import ORTModelForSequenceClassification
-            from transformers import AutoTokenizer, pipeline
+            import onnxruntime as ort
+            from transformers import AutoTokenizer
 
-            logger.info(f"Загрузка ONNX BERT модели: {model_path}")
-            model = ORTModelForSequenceClassification.from_pretrained(model_path)
-            tokenizer = AutoTokenizer.from_pretrained(model_path)
-            _classifier = pipeline(
-                "text-classification",
-                model=model,
-                tokenizer=tokenizer,
-                device=-1,
+            # Выбираем квантизованную модель если есть, иначе обычную
+            onnx_file = next(
+                (f for f in onnx_files if 'quantized' in f.name),
+                onnx_files[0]
             )
-        else:
-            import torch
-            if not hasattr(torch, '__version__'):
-                raise ImportError("torch не установлен корректно")
 
+            logger.info(f"Загрузка ONNX BERT модели: {onnx_file}")
+            session = ort.InferenceSession(
+                str(onnx_file),
+                providers=['CPUExecutionProvider'],
+            )
+            tokenizer = AutoTokenizer.from_pretrained(model_path)
+
+            _classifier = {
+                'session': session,
+                'tokenizer': tokenizer,
+            }
+        else:
             from transformers import pipeline
 
             logger.info(f"Загрузка BERT модели: {model_path}")
@@ -89,7 +94,6 @@ def _get_classifier(model_path: str):
             )
     except ImportError as e:
         logger.error(f"Ошибка импорта ML-зависимостей: {e}")
-        logger.error("Установите зависимости: pip install torch transformers optimum[onnxruntime]")
         raise RuntimeError(f"Не удалось загрузить ML модели: {e}") from e
     except Exception as e:
         logger.error(f"Ошибка загрузки BERT модели {model_path}: {e}")
@@ -126,20 +130,55 @@ def predict_spam(message: str, model_path: str, threshold: float = 0.5) -> Tuple
     classifier = _get_classifier(model_path)
 
     try:
-        result = classifier(message)
+        if isinstance(classifier, dict):
+            # ONNX путь: прямой запуск через onnxruntime
+            session = classifier['session']
+            tokenizer = classifier['tokenizer']
 
-        prediction = int(result[0]['label'][-1])
-        score = result[0]['score']
+            inputs = tokenizer(
+                message,
+                return_tensors='np',
+                truncation=True,
+                padding=True,
+            )
 
-        if prediction == 1:
-            probabilities = [1 - score, score]
+            outputs = session.run(
+                None,
+                {
+                    'input_ids': inputs['input_ids'].astype(np.int64),
+                    'attention_mask': inputs['attention_mask'].astype(np.int64),
+                    'token_type_ids': inputs['token_type_ids'].astype(np.int64),
+                }
+            )
+
+            logits = outputs[0][0]
+            # softmax для получения вероятностей
+            exp_logits = np.exp(logits - np.max(logits))
+            probabilities = exp_logits / exp_logits.sum()
+
+            prediction = int(np.argmax(probabilities))
+            prob_spam = float(probabilities[1])
+            prob_ham = float(probabilities[0])
         else:
-            probabilities = [score, 1 - score]
+            # PyTorch путь: через transformers pipeline
+            result = classifier(message)
 
-        if probabilities[1] < threshold:
+            prediction = int(result[0]['label'][-1])
+            score = result[0]['score']
+
+            if prediction == 1:
+                prob_spam = score
+                prob_ham = 1 - score
+            else:
+                prob_ham = score
+                prob_spam = 1 - score
+
+        probabilities = [prob_ham, prob_spam]
+
+        if prob_spam < threshold:
             prediction = 0
 
-        logger.info(f"BERT: prediction={prediction}, prob_spam={probabilities[1]:.4f}, prob_ham={probabilities[0]:.4f}")
+        logger.info(f"BERT: prediction={prediction}, prob_spam={prob_spam:.4f}, prob_ham={prob_ham:.4f}")
         return prediction, probabilities
 
     except Exception as e:
@@ -172,13 +211,13 @@ def predict_with_sklearn_model(
     text_preprocessed = preprocess_text(text)
     text_vector = vectorizer.transform([text_preprocessed])
 
-    numerical_features = pd.DataFrame([[
+    numerical_features = np.array([[
         count_emojis(text),
         count_newlines(text),
         count_whitespaces(text),
         count_links(text),
         count_tags(text)
-    ]], columns=['emojis', 'newlines', 'whitespaces', 'links', 'tags'])
+    ]])
 
     numerical_features_scaled = scaler.transform(numerical_features)
     features = hstack([text_vector, numerical_features_scaled])
