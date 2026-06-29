@@ -25,3 +25,8 @@ catboost
 
 # Оптимизация гиперпараметров
 optuna
+
+# Сжатие моделей (ONNX экспорт и квантизация)
+onnxruntime
+onnx
+optimum[onnxruntime]

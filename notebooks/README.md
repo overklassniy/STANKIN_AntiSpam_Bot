@@ -11,6 +11,7 @@
 | [`05_additional_evaluation.ipynb`](05_additional_evaluation.ipynb) | Оценка BERT и классических моделей на внешнем тесте, оптимизация порога, анализ ошибок |
 | [`06_hard_negative_mining.ipynb`](06_hard_negative_mining.ipynb) | Поиск и категоризация сложных примеров, на которых BERT ошибается с высокой уверенностью |
 | [`07_ablation_study.ipynb`](07_ablation_study.ipynb) | Абляционное исследование: варианты текста, порог, калибровка, анализ ошибок |
+| [`08_model_compression.ipynb`](08_model_compression.ipynb) | Сжатие трансформерных моделей: float16 конвертация, ONNX int8 квантизация, дедупликация токенайзеров |
 
 ## Порядок работы с ноутбуками
 
@@ -23,3 +24,4 @@
 5. `05_additional_evaluation.ipynb` — оценка на внешнем тесте
 6. `06_hard_negative_mining.ipynb` — анализ сложных примеров
 7. `07_ablation_study.ipynb` — абляционное исследование
+8. `08_model_compression.ipynb` — сжатие моделей для уменьшения размера развёртывания
