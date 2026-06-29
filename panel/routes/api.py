@@ -594,7 +594,9 @@ async def get_available_models(
 ):
     """# Список доступных BERT-моделей
 
-    Возвращает список BERT-моделей, обнаруженных в директории models.
+    Возвращает список BERT-моделей, обнаруженных в директории models и models/compressed.
+
+    Модели из models/compressed возвращаются с префиксом `compressed/`, например `compressed/finetuned_rubert_tiny2_raw_onnx`.
 
     ## Когда использовать
 
@@ -606,7 +608,7 @@ async def get_available_models(
 
     ## Успешный ответ
 
-    Возвращает объект с массивом `items`, каждый элемент — строка с именем модели.
+    Возвращает объект с массивом `items`, каждый элемент — строка с именем модели. Сжатые модели имеют префикс `compressed/`.
 
     Аргументы:
         request (Request): Запрос FastAPI.
@@ -616,14 +618,24 @@ async def get_available_models(
         dict: JSON с массивом имён моделей.
     """
     import os
-    from core.config import MODELS_DIR
+    from core.config import MODELS_DIR, COMPRESSED_MODELS_DIR
 
     models = []
+
+    # Обычные модели из MODELS_DIR
     if os.path.isdir(MODELS_DIR):
         for name in os.listdir(MODELS_DIR):
             path = os.path.join(MODELS_DIR, name)
             if os.path.isdir(path) and os.path.isfile(os.path.join(path, 'config.json')):
                 models.append(name)
+
+    # Сжатые модели из COMPRESSED_MODELS_DIR (с префиксом compressed/)
+    if os.path.isdir(COMPRESSED_MODELS_DIR):
+        for name in os.listdir(COMPRESSED_MODELS_DIR):
+            path = os.path.join(COMPRESSED_MODELS_DIR, name)
+            if os.path.isdir(path) and os.path.isfile(os.path.join(path, 'config.json')):
+                models.append(f'compressed/{name}')
+
     models.sort()
 
     return {'items': models}

@@ -15,25 +15,34 @@ from core.repository.settings import SettingsRepository, SETTING_DESCRIPTIONS
 from core.repository.chat import ChatRepository
 from core.repository.user import UserRepository
 from panel.routes.auth import require_user
-from core.config import DEFAULT_SETTINGS, MODELS_DIR
+from core.config import DEFAULT_SETTINGS, MODELS_DIR, COMPRESSED_MODELS_DIR
 from core.logging import logger
 
 router = APIRouter()
 
 
 def _get_available_bert_models() -> List[str]:
-    """Возвращает список доступных BERT-моделей из директории models.
+    """Возвращает список доступных BERT-моделей из директорий models и models/compressed.
+
+    Сжатые модели из models/compressed возвращаются с префиксом compressed/.
 
     Возвращаемое значение:
         List[str]: Список имён поддиректорий, содержащих файл config.json.
     """
     models: List[str] = []
-    if not os.path.isdir(MODELS_DIR):
-        return models
-    for name in os.listdir(MODELS_DIR):
-        path = os.path.join(MODELS_DIR, name)
-        if os.path.isdir(path) and os.path.isfile(os.path.join(path, 'config.json')):
-            models.append(name)
+
+    if os.path.isdir(MODELS_DIR):
+        for name in os.listdir(MODELS_DIR):
+            path = os.path.join(MODELS_DIR, name)
+            if os.path.isdir(path) and os.path.isfile(os.path.join(path, 'config.json')):
+                models.append(name)
+
+    if os.path.isdir(COMPRESSED_MODELS_DIR):
+        for name in os.listdir(COMPRESSED_MODELS_DIR):
+            path = os.path.join(COMPRESSED_MODELS_DIR, name)
+            if os.path.isdir(path) and os.path.isfile(os.path.join(path, 'config.json')):
+                models.append(f'compressed/{name}')
+
     models.sort()
     return models
 
