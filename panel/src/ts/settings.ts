@@ -9,8 +9,19 @@ import { showToast } from './toast.js';
  * Инициализирует форму глобальных настроек: отправку данных и отображение уведомлений.
  */
 export function initSettings(): void {
-  const form = document.querySelector<HTMLFormElement>('#settings-form');
-  const notification = document.querySelector<HTMLElement>('#settings-notification');
+  initSettingsForm('#settings-form', '#settings-notification');
+  initSettingsForm('#system-settings-form', '#system-settings-notification');
+}
+
+/**
+ * Универсальный обработчик формы настроек.
+ *
+ * @param formSelector CSS-селектор формы.
+ * @param notificationSelector CSS-селектор элемента уведомления.
+ */
+function initSettingsForm(formSelector: string, notificationSelector: string): void {
+  const form = document.querySelector<HTMLFormElement>(formSelector);
+  const notification = document.querySelector<HTMLElement>(notificationSelector);
 
   if (!form) {
     return;
@@ -232,6 +243,34 @@ async function loadChatList(): Promise<void> {
       header.appendChild(id);
       card.appendChild(header);
 
+      const deleteBtn = document.createElement('button');
+      deleteBtn.className = 'chat-card-delete-btn';
+      deleteBtn.type = 'button';
+      deleteBtn.textContent = 'Удалить';
+      deleteBtn.addEventListener('click', async (e: Event) => {
+        e.stopPropagation();
+        if (!confirm(`Удалить чат «${chat.title || chat.chat_id}»?`)) {
+          return;
+        }
+        deleteBtn.disabled = true;
+        deleteBtn.textContent = 'Удаление...';
+        try {
+          await api.deleteChat(chat.pk);
+          showToast(`Чат «${chat.title || chat.chat_id}» удалён.`, 'success');
+          await loadChatList();
+          const container = document.querySelector<HTMLElement>('#chat-settings-container');
+          if (container) {
+            container.style.display = 'none';
+          }
+        } catch (err) {
+          const message = err instanceof Error ? err.message : 'Ошибка удаления чата.';
+          showToast(message, 'error');
+          deleteBtn.disabled = false;
+          deleteBtn.textContent = 'Удалить';
+        }
+      });
+      card.appendChild(deleteBtn);
+
       if (chat.users && chat.users.length > 0) {
         const usersEl = document.createElement('div');
         usersEl.className = 'chat-card-users';
@@ -309,8 +348,8 @@ async function loadChatSettings(chat: ChatInfo): Promise<void> {
 
         const label = document.createElement('label');
         label.htmlFor = `chat-${setting.key}`;
-        label.textContent = setting.key;
-        label.title = setting.description;
+        label.textContent = setting.description || setting.key;
+        label.title = setting.key;
 
         group.appendChild(input);
         group.appendChild(label);
@@ -321,8 +360,8 @@ async function loadChatSettings(chat: ChatInfo): Promise<void> {
 
         const label = document.createElement('label');
         label.htmlFor = `chat-${setting.key}`;
-        label.textContent = setting.key;
-        label.title = setting.description;
+        label.textContent = setting.description || setting.key;
+        label.title = setting.key;
 
         const select = document.createElement('select');
         select.className = 'text_input';
@@ -348,8 +387,8 @@ async function loadChatSettings(chat: ChatInfo): Promise<void> {
 
         const label = document.createElement('label');
         label.htmlFor = `chat-${setting.key}`;
-        label.textContent = setting.key;
-        label.title = setting.description;
+        label.textContent = setting.description || setting.key;
+        label.title = setting.key;
 
         const input = document.createElement('input');
         input.className = 'text_input';
@@ -370,6 +409,49 @@ async function loadChatSettings(chat: ChatInfo): Promise<void> {
     fieldsEl.innerHTML = '<p class="chat-settings-empty">Ошибка загрузки настроек чата.</p>';
     console.error('Ошибка загрузки настроек чата:', err);
   }
+}
+
+/**
+ * Инициализирует кнопку ручного создания резервной копии.
+ */
+export function initBackupButton(): void {
+  const btn = document.querySelector<HTMLButtonElement>('#create-backup-btn');
+  const notification = document.querySelector<HTMLElement>('#backup-notification');
+
+  if (!btn) {
+    return;
+  }
+
+  btn.addEventListener('click', async () => {
+    btn.disabled = true;
+    btn.textContent = 'Создание...';
+
+    if (notification) {
+      notification.textContent = 'Создание резервной копии...';
+      notification.style.display = 'block';
+    }
+
+    try {
+      const result = await api.createBackup();
+      if (notification) {
+        notification.textContent = result.message || 'Резервная копия создана и отправлена в Telegram.';
+        notification.style.display = 'block';
+        setTimeout(() => {
+          notification.style.display = 'none';
+        }, 5000);
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Ошибка создания резервной копии.';
+      if (notification) {
+        notification.textContent = message;
+        notification.style.display = 'block';
+      }
+      console.error('Ошибка создания бэкапа:', err);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Создать резервную копию';
+    }
+  });
 }
 
 /**

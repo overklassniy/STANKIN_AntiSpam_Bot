@@ -104,3 +104,19 @@ class ChatRepository:
         """
         pk = await ChatRepository.get_chat_pk(chat_id)
         return pk is not None
+
+    @staticmethod
+    async def delete_chat(pk: int) -> bool:
+        """Удаляет чат из базы данных.
+
+        Аргументы:
+            pk (int): PK записи в таблице chat.
+
+        Возвращаемое значение:
+            bool: True если запись удалена.
+        """
+        pool = get_pool()
+        result = await pool.execute(
+            'DELETE FROM chat WHERE id = $1', pk
+        )
+        return result.endswith('1')

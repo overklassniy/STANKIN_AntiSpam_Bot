@@ -10,6 +10,7 @@
         {% if is_superadmin %}
         <button class="settings-tab active" role="tab" aria-selected="true" data-tab="global">Глобальные</button>
         <button class="settings-tab" role="tab" aria-selected="false" data-tab="chats">Чаты</button>
+        <button class="settings-tab" role="tab" aria-selected="false" data-tab="system">Системные</button>
         {% else %}
         <button class="settings-tab active" role="tab" aria-selected="true" data-tab="chats">Чаты</button>
         {% endif %}
@@ -23,11 +24,11 @@
             {% if field.type == 'checkbox' %}
             <div class="form-group checkbox-group checkbox-wrapper">
                 <input type="checkbox" id="{{ field.name }}" name="{{ field.name }}" value="true" {% if field.value %}checked{% endif %}>
-                <label for="{{ field.name }}" title="{{ field.description }}">{{ field.name }}</label>
+                <label for="{{ field.name }}" title="{{ field.name }}">{{ field.description }}</label>
             </div>
             {% elif field.type == 'select' %}
             <div class="form-group">
-                <label for="{{ field.name }}" title="{{ field.description }}">{{ field.name }}</label>
+                <label for="{{ field.name }}" title="{{ field.name }}">{{ field.description }}</label>
                 <select class="text_input" id="{{ field.name }}" name="{{ field.name }}">
                     {% for option in field.options %}
                     <option value="{{ option }}" {% if field.value == option %}selected{% endif %}>{{ option }}</option>
@@ -36,7 +37,7 @@
             </div>
             {% else %}
             <div class="form-group">
-                <label for="{{ field.name }}" title="{{ field.description }}">{{ field.name }}</label>
+                <label for="{{ field.name }}" title="{{ field.name }}">{{ field.description }}</label>
                 <input class="text_input" type="{{ field.type }}" {% if field.type == "number" %}step="any"{% endif %} id="{{ field.name }}" name="{{ field.name }}" value="{{ field.value }}">
             </div>
             {% endif %}
@@ -46,6 +47,7 @@
             <button {% if not can_configure %}disabled{% endif %} class="save_config_button" type="submit">Сохранить</button>
         </form>
     </div>
+
     {% endif %}
 
     <div class="settings-panel {% if not is_superadmin %}active{% endif %}" data-panel="chats" role="tabpanel">
@@ -75,5 +77,45 @@
             </form>
         </div>
     </div>
+
+    {% if is_superadmin %}
+    <div class="settings-panel" data-panel="system" role="tabpanel">
+        <div class="backup-section">
+            <h2>Резервное копирование</h2>
+            <p class="backup-description">Создаёт дамп базы данных (pg_dump) и отправляет файл в Telegram.</p>
+            <button id="create-backup-btn" class="save_config_button" type="button">Создать резервную копию</button>
+            <div id="backup-notification" class="notification" style="display:none" role="status" aria-live="polite"></div>
+        </div>
+
+        <form id="system-settings-form" method="POST" action="/settings" data-chat-pk="">
+            <fieldset {% if not can_configure %}disabled{% endif %}>
+            {% for field in system_fields %}
+            {% if field.type == 'checkbox' %}
+            <div class="form-group checkbox-group checkbox-wrapper">
+                <input type="checkbox" id="{{ field.name }}" name="{{ field.name }}" value="true" {% if field.value %}checked{% endif %}>
+                <label for="{{ field.name }}" title="{{ field.name }}">{{ field.description }}</label>
+            </div>
+            {% elif field.type == 'select' %}
+            <div class="form-group">
+                <label for="{{ field.name }}" title="{{ field.name }}">{{ field.description }}</label>
+                <select class="text_input" id="{{ field.name }}" name="{{ field.name }}">
+                    {% for option in field.options %}
+                    <option value="{{ option }}" {% if field.value == option %}selected{% endif %}>{{ option }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% else %}
+            <div class="form-group">
+                <label for="{{ field.name }}" title="{{ field.name }}">{{ field.description }}</label>
+                <input class="text_input" type="{{ field.type }}" {% if field.type == "number" %}step="any"{% endif %} id="{{ field.name }}" name="{{ field.name }}" value="{{ field.value }}">
+            </div>
+            {% endif %}
+            {% endfor %}
+            <div id="system-settings-notification" class="notification" style="display:none" role="status" aria-live="polite"></div>
+            </fieldset>
+            <button {% if not can_configure %}disabled{% endif %} class="save_config_button" type="submit">Сохранить</button>
+        </form>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}

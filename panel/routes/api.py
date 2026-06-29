@@ -395,7 +395,7 @@ async def get_settings(
         SettingOut(
             key=key,
             value=settings.get(key, DEFAULT_SETTINGS.get(key)),
-            description=SETTING_DESCRIPTIONS.get(key, ''),
+            description=SETTING_DESCRIPTIONS.get(key, key),
             is_global=True,
             chat_pk=None,
         ).model_dump()
@@ -459,7 +459,7 @@ async def get_chat_settings(
         SettingOut(
             key=key,
             value=settings.get(key, DEFAULT_SETTINGS.get(key)),
-            description=SETTING_DESCRIPTIONS.get(key, ''),
+            description=SETTING_DESCRIPTIONS.get(key, key),
             is_global=False,
             chat_pk=chat_pk,
         ).model_dump()
@@ -812,3 +812,106 @@ async def add_chat(
     logger.info(f"API: чат {data.chat_id} добавлен вручную: {title}")
 
     return ChatOut(pk=pk, chat_id=data.chat_id, title=title, is_active=True).model_dump()
+
+
+@router.delete('/chats/{chat_pk}', tags=['Чаты'], summary='Удаление чата')
+async def delete_chat(
+    request: Request,
+    chat_pk: int,
+    user: dict = Depends(require_user_api),
+):
+    """# Удаление чата
+
+    Полностью удаляет чат из системы вместе со связанными настройками.
+
+    ## Когда использовать
+
+    Используйте этот эндпоинт, когда нужно удалить чат из списка наблюдаемых.
+
+    ## Требуемые права
+
+    Запрос доступен только суперпользователю.
+
+    ## Возможные ошибки
+
+    ### 401 Не авторизован
+
+    Сессия не содержит данных пользователя.
+
+    ### 403 Недостаточно прав
+
+    Пользователь не является суперпользователем.
+
+    ### 404 Чат не найден
+
+    Чат с указанным PK не найден.
+
+    Аргументы:
+        request (Request): Запрос FastAPI.
+        chat_pk (int): PK чата в базе данных.
+        user (dict): Данные текущего пользователя.
+    """
+    if not user['is_superadmin']:
+        raise HTTPException(status_code=403, detail='Недостаточно прав')
+
+    deleted = await ChatRepository.delete_chat(chat_pk)
+    if not deleted:
+        raise HTTPException(status_code=404, detail='Чат не найден')
+
+    logger.info(f"API: чат {chat_pk} удалён")
+    return {'status': 'ok'}
+
+
+@router.post('/backup', tags=['Бэкап'], summary='Создание резервной копии базы данных')
+async def create_backup(
+    request: Request,
+    user: dict = Depends(require_user_api),
+):
+    """# Создание резервной копии базы данных
+
+    Запускает pg_dump, вычисляет SHA-256 хест дампа и отправляет файл в Telegram-чат управления в тред для бэкапов.
+
+    ## Когда использовать
+
+    Используйте этот эндпоинт для ручного создания резервной копии базы данных из веб-панели.
+
+    ## Требуемые права
+
+    Запрос доступен только суперпользователю.
+
+    ## Успешный ответ
+
+    Возвращает объект `{"status": "ok", "message": "..."} `.
+
+    ## Возможные ошибки
+
+    ### 401 Не авторизован
+
+    Сессия не содержит данных пользователя.
+
+    ### 403 Недостаточно прав
+
+    Пользователь не является суперпользователем.
+
+    ### 500 Ошибка создания бэкапа
+
+    Не удалось создать или отправить дамп базы данных.
+
+    Аргументы:
+        request (Request): Запрос FastAPI.
+        user (dict): Данные текущего пользователя.
+
+    Возвращаемое значение:
+        dict: JSON со статусом операции.
+    """
+    if not user['is_superadmin']:
+        raise HTTPException(status_code=403, detail='Недостаточно прав')
+
+    from bot.services.backup import BackupService
+
+    success = await BackupService.run_backup()
+
+    if not success:
+        raise HTTPException(status_code=500, detail='Не удалось создать резервную копию')
+
+    return {'status': 'ok', 'message': 'Резервная копия создана и отправлена в Telegram'}

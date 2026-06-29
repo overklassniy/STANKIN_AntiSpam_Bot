@@ -10,7 +10,7 @@ from core.repository.muted import MutedRepository
 from core.repository.settings import SettingsRepository
 from core.repository.user import UserRepository
 from panel.routes.auth import require_user
-from core.utils import plural_form, escape_html
+from core.utils import plural_form, escape_html, get_visible_pages
 from core.logging import logger
 
 router = APIRouter()
@@ -114,6 +114,6 @@ async def muted_page(
             'next_url': f'/muted?page={pagination["current_page"] + 1}' if pagination['current_page'] < pagination['total_pages'] else None,
             'total_pages': pagination['total_pages'],
             'current_page': pagination['current_page'],
-            'pages': range(1, pagination['total_pages'] + 1),
+            'pages': get_visible_pages(pagination['current_page'], pagination['total_pages']),
         }
     )

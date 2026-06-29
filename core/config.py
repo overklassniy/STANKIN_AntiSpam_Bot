@@ -64,6 +64,9 @@ NOTIFICATION_CHAT_94_SPAM_THREAD = int(os.getenv('NOTIFICATION_CHAT_94_SPAM_THRE
 NOTIFICATION_CHAT_NS_SPAM_THREAD = int(os.getenv('NOTIFICATION_CHAT_NS_SPAM_THREAD', '3'))
 NOTIFICATION_CHAT_MUTED_THREAD = int(os.getenv('NOTIFICATION_CHAT_MUTED_THREAD', '4'))
 
+# ID треда для отправки резервных копий базы данных
+NOTIFICATION_CHAT_BACKUP_THREAD = int(os.getenv('NOTIFICATION_CHAT_BACKUP_THREAD', '5'))
+
 # Системные пользователи Telegram (анонимный админ, бот канала)
 SYSTEM_USER_IDS = [777000, 1087968824]
 
@@ -145,6 +148,11 @@ DEFAULT_SETTINGS = {
 
     # UI
     'PER_PAGE': 10,
+
+    # Резервное копирование
+    'BACKUP_ENABLED': False,
+    'BACKUP_START_TIME': '03:00',
+    'BACKUP_INTERVAL_HOURS': 24,
 }
 
 

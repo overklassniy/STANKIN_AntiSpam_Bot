@@ -100,8 +100,13 @@ async def start_bot() -> None:
     # Автообнаружение чатов, где бот админ
     await discover_admin_chats(bot, exclude_chat_id=NOTIFICATION_CHAT_ID)
 
+    # Запуск планировщика авто-бэкапов
+    from bot.services.backup import BackupService
+    await BackupService.start_scheduler()
+
     # Закрытие ресурсов при остановке
     from bot.services.external_apis import close_shared_session
+    dp.shutdown.register(BackupService.stop_scheduler)
     dp.shutdown.register(close_shared_session)
     dp.shutdown.register(close_pool)
 

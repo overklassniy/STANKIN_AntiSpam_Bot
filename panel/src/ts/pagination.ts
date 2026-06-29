@@ -48,6 +48,7 @@ export function initPagination(options: PaginatedTableOptions): void {
 
   function renderPagination(pagination: PaginationMeta): void {
     const links: string[] = [];
+    const visibleCount = 5;
 
     if (pagination.current_page > 1) {
       links.push(
@@ -58,7 +59,14 @@ export function initPagination(options: PaginatedTableOptions): void {
       );
     }
 
-    for (let i = 1; i <= pagination.total_pages; i++) {
+    const total = pagination.total_pages;
+    let start = Math.max(1, pagination.current_page - Math.floor(visibleCount / 2));
+    let end = Math.min(total, start + visibleCount - 1);
+    if (end - start + 1 < visibleCount) {
+      start = Math.max(1, end - visibleCount + 1);
+    }
+
+    for (let i = start; i <= end; i++) {
       links.push(
         `<a href="#" class="pagination-link ${i === pagination.current_page ? 'active' : ''}" data-page="${i}">${i}</a>`
       );
