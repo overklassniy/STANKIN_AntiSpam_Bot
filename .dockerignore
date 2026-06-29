@@ -18,7 +18,7 @@ models/
 chat_exports/
 instance/
 
-# Файлы окружения (секреты)
+# Файлы окружения
 .env
 .env.example
 
@@ -35,4 +35,3 @@ panel/static/styles/
 
 # Файлы конфигурации, не нужные в образе
 .gitignore
-package-lock.json
