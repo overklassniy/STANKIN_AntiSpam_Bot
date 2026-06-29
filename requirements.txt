@@ -20,7 +20,6 @@ aiohttp-socks
 asyncpg
 
 # Машинное обучение
-pandas
 scipy
 scikit-learn
 

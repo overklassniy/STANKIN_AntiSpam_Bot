@@ -1,9 +1,9 @@
 services:
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ghcr.io/overklassniy/stankin_antispam_bot:latest
+    pull_policy: always
     container_name: stankin-antispam
+    user: root
     env_file: .env
     extra_hosts:
       - "host.docker.internal:host-gateway"

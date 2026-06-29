@@ -1,6 +1,5 @@
-# ML-зависимости: только ONNX Runtime
-# Используется с Dockerfile (главный, ONNX-only)
+# ML-зависимости: ONNX Runtime без torch и optimum
 
-transformers
-optimum[onnxruntime]
+transformers<4.58.0
 onnxruntime
+onnx
