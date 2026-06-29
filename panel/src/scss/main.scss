@@ -1,0 +1,10 @@
+// Главный файл: подключение всех partials
+
+@use 'variables';
+@use 'mixins';
+@use 'base';
+@use 'layout';
+@use 'components';
+@use 'login';
+@use 'settings';
+@use 'exception';

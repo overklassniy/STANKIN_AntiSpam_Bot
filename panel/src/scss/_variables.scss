@@ -1,0 +1,151 @@
+// Переменные проекта
+
+// Цвета (SCSS-переменные для использования в partials)
+$text-color: #333;
+$second-color: #646464;
+$blue: #6491F0;
+$light-blue: #91aeec;
+$accent-color: #9370DB;
+$bg-navbar: white;
+$white: #ffffff;
+$white-mixed: rgba(255, 255, 255, 0.5);
+$dark-white-mixed: rgba(255, 255, 255, 0.95);
+$shadow-color: rgba(0, 0, 0, 0.1);
+$shadow-color-strong: rgba(0, 0, 0, 0.3);
+$notification-bg: #FFFACD;
+$faq-bg: rgba(214, 245, 245, 0.5);
+$faq-bg-solid: #f2ffff;
+$input-bg: rgba(145, 145, 145, 0.12);
+$input-bg-hover: rgba(155, 155, 155, 0.1);
+$border-color: #ccc;
+$border-light: hsla(0, 0%, 65%, 0.158);
+$checkbox-bg: #d7d7d7;
+$checkbox-gradient: linear-gradient(90deg, #f19af3, #f099b5);
+$checkbox-knob-bg: linear-gradient(45deg, #dedede, #ffffff);
+
+// Шрифты
+$font-regular: "ALS Sirius Regular", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+$font-bold: "ALS Sirius Bold", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+// Размеры
+$header-height: 80px;
+$header-height-mobile: 60px;
+$header-height-landscape: 50px;
+$border-radius: 0.5rem;
+$border-radius-sm: 5px;
+$container-margin: 2rem;
+$container-margin-mobile: 1rem;
+$container-margin-small: 0.5rem;
+$default-time: 0.3s;
+
+// Брейкпоинты
+$bp-large: 1750px;
+$bp-desktop: 1550px;
+$bp-desktop-sm: 1450px;
+$bp-tablet: 1350px;
+$bp-mobile: 900px;
+$bp-mobile-sm: 701px;
+$bp-mobile-xs: 500px;
+$bp-mobile-xxs: 381px;
+$bp-tiny: 320px;
+$bp-landscape: 500px;
+$bp-login-tablet: 700px;
+$bp-login-mobile: 400px;
+$bp-login-tiny: 320px;
+$bp-settings-tablet: 1050px;
+
+// CSS Custom Properties для тем
+:root {
+  --color-text: #{$text-color};
+  --color-text-secondary: #{$second-color};
+  --color-primary: #{$blue};
+  --color-primary-light: #{$light-blue};
+  --color-accent: #{$accent-color};
+  --color-bg-navbar: #{$bg-navbar};
+  --color-bg: #f0f2f5;
+  --color-surface: #{$white-mixed};
+  --color-surface-solid: #{$dark-white-mixed};
+  --color-surface-row: transparent;
+  --color-surface-row-alt: rgba(0, 0, 0, 0.03);
+  --color-surface-row-hover: rgba(147, 112, 219, 0.1);
+  --color-border: #{$border-color};
+  --color-border-light: #{$border-light};
+  --color-notification: #{$notification-bg};
+  --color-faq-bg: #{$faq-bg};
+  --color-faq-bg-solid: #{$faq-bg-solid};
+  --color-input-bg: #{$input-bg};
+  --color-input-bg-hover: #{$input-bg-hover};
+  --color-shadow: #{$shadow-color};
+  --color-shadow-strong: #{$shadow-color-strong};
+  --theme-toggle-light-scale: 0;
+  --theme-toggle-dark-scale: 1;
+  --theme-toggle-rotate: 0turn;
+  --color-checkbox-bg: #{$checkbox-bg};
+  --color-checkbox-gradient: #{$checkbox-gradient};
+  --color-checkbox-knob-bg: #{$checkbox-knob-bg};
+  --color-checkbox-border: #BBC1E1;
+  --color-checkbox-border-hover: #275EFE;
+  --color-checkbox-bg-solid: #fff;
+  --color-checkbox-active: #275EFE;
+  --color-checkbox-active-inner: #fff;
+  --color-checkbox-disabled: #F6F8FF;
+  --color-checkbox-disabled-inner: #E1E6F9;
+  --color-white: #{$white};
+
+  --font-regular: #{$font-regular};
+  --font-bold: #{$font-bold};
+
+  --radius: #{$border-radius};
+  --radius-sm: #{$border-radius-sm};
+  --header-height: #{$header-height};
+  --header-height-mobile: #{$header-height-mobile};
+  --header-height-landscape: #{$header-height-landscape};
+  --transition: #{$default-time};
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.15);
+}
+
+// Тёмная тема
+[data-theme="dark"] {
+  --color-text: #e0e0e0;
+  --color-text-secondary: #a0a0a0;
+  --color-primary: #7ba0f5;
+  --color-primary-light: #6491F0;
+  --color-accent: #b490e0;
+  --color-bg-navbar: #1a1a1f;
+  --color-bg: #141417;
+  --color-surface: rgba(30, 30, 35, 0.6);
+  --color-surface-solid: rgba(25, 25, 30, 0.95);
+  --color-surface-row: transparent;
+  --color-surface-row-alt: rgba(255, 255, 255, 0.04);
+  --color-surface-row-hover: rgba(180, 144, 224, 0.12);
+  --color-border: #444;
+  --color-border-light: hsla(0, 0%, 35%, 0.2);
+  --color-notification: #3a3520;
+  --color-faq-bg: rgba(30, 50, 50, 0.5);
+  --color-faq-bg-solid: #1a2e2e;
+  --color-input-bg: rgba(255, 255, 255, 0.08);
+  --color-input-bg-hover: rgba(255, 255, 255, 0.06);
+  --color-shadow: rgba(0, 0, 0, 0.4);
+  --color-shadow-strong: rgba(0, 0, 0, 0.6);
+  --theme-toggle-light-scale: 1;
+  --theme-toggle-dark-scale: 0;
+  --theme-toggle-rotate: 1turn;
+  --color-checkbox-bg: #3a3a3a;
+  --color-checkbox-gradient: linear-gradient(90deg, #c47bc6, #c47ba0);
+  --color-checkbox-knob-bg: linear-gradient(45deg, #4a4a4a, #6a6a6a);
+  --color-checkbox-border: #555;
+  --color-checkbox-border-hover: #7ba0f5;
+  --color-checkbox-bg-solid: #2a2a2e;
+  --color-checkbox-active: #7ba0f5;
+  --color-checkbox-active-inner: #fff;
+  --color-checkbox-disabled: #2a2a2e;
+  --color-checkbox-disabled-inner: #3a3a3a;
+  --color-white: #e0e0e0;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.5);
+}

@@ -1,0 +1,466 @@
+// Базовые стили: reset, typography, scrollbar, фоновое изображение
+
+@use 'variables' as *;
+@use 'mixins' as *;
+
+@font-face {
+  font-family: "ALS Sirius Regular";
+  src: url("../fonts/ALS_Sirius_Regular.otf");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "ALS Sirius Bold";
+  src: url("../fonts/ALS_Sirius_Bold.otf");
+  font-display: swap;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.no-transition,
+.no-transition * {
+  transition: none !important;
+}
+
+.no-transition .theme-toggle svg {
+  transition: scale 300ms ease-in-out, rotate 500ms ease-in-out !important;
+}
+
+html {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background-color: var(--color-bg);
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  font-family: var(--font-regular);
+  color: var(--color-text);
+  background-color: transparent;
+  -webkit-text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.background {
+  position: fixed;
+  top: 93%;
+  left: 33.33%;
+  width: 255vh;
+  transform: translate(-45%, -50%);
+  pointer-events: none;
+  z-index: 0;
+
+  &.login-bg {
+    opacity: 75%;
+    filter: blur(10px);
+  }
+
+  @include respond-to(768px) {
+    top: 100%;
+    left: 50%;
+    width: 200vh;
+  }
+
+  @include respond-to(480px) {
+    width: 150vh;
+    opacity: 0.7;
+  }
+}
+
+// Затемнение фона в тёмной теме
+[data-theme="dark"] .background {
+  opacity: 0.3;
+  filter: brightness(0.4) saturate(0.8);
+
+  &.login-bg {
+    opacity: 0.2;
+    filter: brightness(0.3) saturate(0.7) blur(10px);
+  }
+}
+
+a {
+  color: var(--color-text);
+  outline-style: none;
+  -webkit-tap-highlight-color: transparent;
+
+  &, &:link, &:visited {
+    text-decoration: none;
+  }
+
+  &:hover {
+    text-decoration: none;
+    color: var(--color-accent);
+  }
+}
+
+::-webkit-scrollbar {
+  overflow-y: scroll;
+  width: 5px;
+  height: 5px;
+
+  @include respond-to(480px) {
+    width: 3px;
+    height: 3px;
+  }
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-accent);
+  height: 150px;
+  border-radius: var(--radius-sm);
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::selection {
+  background: var(--color-accent);
+  color: var(--color-white);
+  text-shadow: none;
+}
+
+.url {
+  outline-style: none;
+  color: var(--color-text);
+  text-decoration: none;
+  transition: color var(--transition);
+}
+
+.animate {
+  @include animate;
+}
+
+.notification {
+  background-color: var(--color-notification);
+  padding: 1rem;
+  border-radius: var(--radius-sm);
+}
+
+.noselect {
+  @include noselect;
+}
+
+.secolor {
+  color: var(--color-text-secondary);
+}
+
+.opacity {
+  opacity: 0.6;
+  user-select: none;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+// Skip-link для доступности
+.skip-link {
+  position: absolute;
+  top: -100px;
+  left: 0;
+  background: var(--color-primary);
+  color: var(--color-white);
+  padding: 0.75rem 1.5rem;
+  border-radius: 0 0 var(--radius) 0;
+  z-index: 10000;
+  transition: top var(--transition);
+
+  &:focus {
+    top: 0;
+    color: var(--color-white);
+  }
+}
+
+// Focus-visible для всех интерактивных элементов
+*:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+// Универсальные кнопки
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-bold);
+  font-size: 14pt;
+  font-weight: bold;
+  cursor: pointer;
+  border: none;
+  transition: all var(--transition);
+  text-decoration: none;
+  white-space: nowrap;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+
+  &:disabled,
+  &:disabled:hover {
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+    opacity: 0.6;
+  }
+}
+
+.btn-primary {
+  background: var(--color-accent);
+  color: var(--color-white);
+
+  &:hover {
+    color: var(--color-white);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+    filter: brightness(1.1);
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: var(--shadow-sm);
+    filter: brightness(0.95);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+}
+
+.btn-ghost {
+  background: var(--color-input-bg);
+  color: var(--color-text-secondary);
+
+  &:hover {
+    background: var(--color-input-bg-hover);
+    box-shadow: var(--shadow-sm);
+  }
+}
+
+.btn-sm {
+  padding: 0.5rem 1rem;
+  font-size: 12pt;
+}
+
+.btn-lg {
+  padding: 1rem 2rem;
+  font-size: 16pt;
+}
+
+// Skeleton-заглушка
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-input-bg) 25%,
+    var(--color-input-bg-hover) 50%,
+    var(--color-input-bg) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s infinite;
+  border-radius: var(--radius-sm);
+}
+
+@keyframes skeleton-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+// Empty state
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1.5rem;
+  text-align: center;
+  color: var(--color-text-secondary);
+
+  .empty-state-icon {
+    width: 64px;
+    height: 64px;
+    margin-bottom: 1rem;
+    opacity: 0.4;
+  }
+
+  .empty-state-title {
+    font-family: var(--font-bold);
+    font-size: 16pt;
+    margin-bottom: 0.5rem;
+    color: var(--color-text);
+  }
+
+  .empty-state-text {
+    font-size: 13pt;
+    max-width: 30rem;
+  }
+}
+
+// Toast-уведомления
+.toast-container {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  pointer-events: none;
+
+  @include respond-to($bp-mobile-xs) {
+    bottom: 1rem;
+    right: 1rem;
+    left: 1rem;
+  }
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  border-radius: var(--radius);
+  background: var(--color-surface-solid);
+  backdrop-filter: blur(20px);
+  box-shadow: var(--shadow-lg);
+  font-size: 13pt;
+  pointer-events: auto;
+  animation: toast-slide-in 0.3s ease forwards;
+  max-width: 24rem;
+
+  @include respond-to($bp-mobile-xs) {
+    max-width: none;
+    padding: 0.75rem 1rem;
+    font-size: 12pt;
+  }
+
+  &.toast-success {
+    border-left: 4px solid #22c55e;
+  }
+
+  &.toast-error {
+    border-left: 4px solid #ef4444;
+  }
+
+  &.toast-info {
+    border-left: 4px solid var(--color-primary);
+  }
+
+  &.toast-hide {
+    animation: toast-slide-out 0.3s ease forwards;
+  }
+}
+
+@keyframes toast-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes toast-slide-out {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+}
+
+// Анимации появления
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in-up {
+  animation: fade-in-up 0.4s ease forwards;
+}
+
+@include reduced-motion {
+  .animate {
+    transition: none;
+
+    &:hover {
+      transition: none;
+    }
+  }
+
+  @keyframes slideDown {
+    from, to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes wobble {
+    from, to {
+      transform: none;
+    }
+  }
+
+  @keyframes fade-in-up {
+    from, to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes skeleton-shimmer {
+    0%, 100% { background-position: 0 0; }
+  }
+
+  @keyframes toast-slide-in {
+    from, to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes toast-slide-out {
+    from, to {
+      opacity: 0;
+      transform: none;
+    }
+  }
+}

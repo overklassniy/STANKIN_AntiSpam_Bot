@@ -1,0 +1,569 @@
+// Страница настроек
+
+@use 'variables' as *;
+@use 'mixins' as *;
+
+form {
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+  padding-bottom: 1.5rem;
+  width: 100%;
+  max-width: 40rem;
+
+  @include respond-to($bp-settings-tablet) {
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  @include respond-to($bp-mobile-sm) {
+    padding: 1rem;
+  }
+
+  @include respond-to($bp-mobile-xs) {
+    padding: 0.75rem;
+  }
+}
+
+label {
+  @include noselect;
+  margin-right: 0.5rem;
+  word-wrap: break-word;
+}
+
+input {
+  &::-webkit-outer-spin-button,
+  &::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  &[type=number] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+}
+
+@supports (-webkit-appearance: none) or (-moz-appearance: none) {
+  #settings-form .checkbox-wrapper input[type=checkbox],
+  #chat-settings-form .checkbox-wrapper input[type=checkbox] {
+    --active: var(--color-checkbox-active);
+    --active-inner: var(--color-checkbox-active-inner);
+    --focus: 2px rgba(100, 145, 240, 0.3);
+    --border: var(--color-checkbox-border);
+    --border-hover: var(--color-checkbox-border-hover);
+    --background: var(--color-checkbox-bg-solid);
+    --disabled: var(--color-checkbox-disabled);
+    --disabled-inner: var(--color-checkbox-disabled-inner);
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    height: 21px;
+    outline: none;
+    display: inline-block;
+    vertical-align: top;
+    position: relative;
+    margin: 0;
+    cursor: pointer;
+    border: 1px solid var(--bc, var(--border));
+    background: var(--b, var(--background));
+    transition: background 0.3s, border-color 0.3s, box-shadow 0.2s;
+    flex-shrink: 0;
+
+    &:after {
+      content: "";
+      display: block;
+      left: 0;
+      top: 0;
+      position: absolute;
+      transition: transform var(--d-t, 0.3s) var(--d-t-e, ease),
+        opacity var(--d-o, 0.2s);
+    }
+
+    &:checked {
+      --b: var(--active);
+      --bc: var(--active);
+      --d-o: 0.3s;
+      --d-t: 0.6s;
+      --d-t-e: cubic-bezier(0.2, 0.85, 0.32, 1.2);
+    }
+
+    &:disabled {
+      --b: var(--disabled);
+      cursor: not-allowed;
+      opacity: 0.9;
+
+      &:checked {
+        --b: var(--disabled-inner);
+        --bc: var(--border);
+      }
+
+      + label {
+        cursor: not-allowed;
+      }
+    }
+
+    &:hover:not(:checked):not(:disabled) {
+      --bc: var(--border-hover);
+    }
+
+    &:focus {
+      box-shadow: 0 0 0 var(--focus);
+    }
+
+    &:not(.switch) {
+      width: 21px;
+      border-radius: 7px;
+
+      &:after {
+        opacity: var(--o, 0);
+        width: 5px;
+        height: 9px;
+        border: 2px solid var(--active-inner);
+        border-top: 0;
+        border-left: 0;
+        left: 7px;
+        top: 4px;
+        transform: rotate(var(--r, 20deg));
+      }
+
+      &:checked {
+        --o: 1;
+        --r: 43deg;
+      }
+    }
+
+    + label {
+      font-size: 14px;
+      line-height: 21px;
+      display: inline-block;
+      vertical-align: middle;
+      cursor: pointer;
+      margin-left: 4px;
+    }
+  }
+}
+
+#settings-form .checkbox-wrapper *,
+#chat-settings-form .checkbox-wrapper * {
+  box-sizing: inherit;
+
+  &:before,
+  &:after {
+    box-sizing: inherit;
+  }
+}
+
+.text_input {
+  padding: 8px 12px;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--color-text);
+  vertical-align: middle;
+  background-color: var(--color-surface-solid);
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  outline: none;
+  box-shadow: var(--shadow-sm);
+  transition: border-color var(--transition), box-shadow var(--transition);
+  width: 100%;
+  max-width: 18rem;
+  box-sizing: border-box;
+
+  &:disabled {
+    background-color: var(--color-input-bg);
+    cursor: not-allowed;
+  }
+
+  &:focus {
+    border-color: var(--color-primary);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(100, 145, 240, 0.3);
+  }
+
+  @include respond-to($bp-mobile-xs) {
+    font-size: 12px;
+    padding: 6px 10px;
+  }
+
+  @include respond-to($bp-mobile-xxs) {
+    font-size: 11px;
+  }
+}
+
+select.text_input {
+  cursor: pointer;
+  appearance: auto;
+  -webkit-appearance: auto;
+  -moz-appearance: auto;
+}
+
+.form-group {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+
+  label {
+    flex: 0 0 auto;
+    min-width: 12rem;
+    max-width: 18rem;
+
+    @include respond-to($bp-settings-tablet) {
+      min-width: 10rem;
+    }
+
+    @include respond-to($bp-mobile-sm) {
+      min-width: auto;
+      max-width: none;
+      width: 100%;
+      margin-bottom: 0.25rem;
+    }
+
+    @include respond-to($bp-mobile-xs) {
+      font-size: 12pt;
+    }
+
+    @include respond-to($bp-mobile-xxs) {
+      font-size: 11pt;
+    }
+  }
+
+  .text_input {
+    flex: 1;
+    min-width: 10rem;
+
+    @include respond-to($bp-mobile-sm) {
+      width: 100%;
+      max-width: none;
+    }
+  }
+
+  @include respond-to($bp-mobile-sm) {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+.checkbox-group {
+  flex-direction: row;
+
+  label {
+    order: 2;
+    min-width: auto;
+    max-width: none;
+
+    @include respond-to($bp-mobile-sm) {
+      width: auto;
+      margin-bottom: 0;
+    }
+  }
+
+  input[type=checkbox] {
+    order: 1;
+  }
+
+  @include respond-to($bp-mobile-sm) {
+    flex-direction: row;
+    align-items: center;
+  }
+}
+
+.save_config_button {
+  background: var(--color-accent);
+  color: var(--color-white);
+  display: block;
+  padding: 10px 20px;
+  border-radius: 8px;
+  outline: none;
+  font-size: 13pt;
+  letter-spacing: 0.3px;
+  font-weight: 600;
+  width: 100%;
+  max-width: 18rem;
+  cursor: pointer;
+  margin-top: 1.5rem;
+  transition: all var(--transition);
+  border: none;
+
+  &:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+    filter: brightness(1.1);
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: var(--shadow-sm);
+    filter: brightness(0.95);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+
+  &:disabled,
+  &:disabled:hover {
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+    opacity: 0.6;
+    filter: none;
+  }
+
+  @include respond-to($bp-mobile-sm) {
+    width: 100%;
+    max-width: none;
+    font-size: 14pt;
+    padding: 12px 20px;
+  }
+
+  @include respond-to($bp-mobile-xs) {
+    font-size: 12pt;
+    padding: 10px 16px;
+  }
+
+  @include respond-to($bp-mobile-xxs) {
+    font-size: 11pt;
+  }
+}
+
+.notification {
+  margin-top: 1.5rem;
+  max-width: 100%;
+  text-wrap: balance;
+  text-align: center;
+  padding: 1rem;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-notification);
+
+  @include respond-to($bp-mobile-xs) {
+    font-size: 12pt;
+    padding: 0.75rem;
+  }
+}
+
+.settings-tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 1.5rem;
+  border-bottom: 2px solid var(--color-border-light);
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+  max-width: 40rem;
+  margin-left: auto;
+  margin-right: auto;
+
+  @include respond-to($bp-settings-tablet) {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  @include respond-to($bp-mobile-sm) {
+    padding: 0 1rem;
+  }
+}
+
+.settings-tab {
+  flex: 1;
+  text-align: center;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 0.75rem 1rem;
+  font-size: 14px;
+  font-family: var(--font-regular);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: color var(--transition), border-color var(--transition);
+  margin-bottom: -2px;
+
+  &:hover {
+    color: var(--color-text);
+  }
+
+  &.active {
+    color: var(--color-accent);
+    border-bottom-color: var(--color-accent);
+    font-weight: 600;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+
+  @include respond-to($bp-mobile-xs) {
+    font-size: 12px;
+    padding: 0.5rem 0.5rem;
+  }
+}
+
+.settings-panel {
+  display: none;
+
+  &.active {
+    display: block;
+  }
+}
+
+.add-chat-form {
+  padding: 1rem 1.5rem;
+  max-width: 40rem;
+  margin: 0 auto 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+
+  .form-group {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .save_config_button {
+    max-width: 100%;
+    margin-top: 0;
+  }
+
+  @include respond-to($bp-mobile-sm) {
+    padding: 1rem;
+  }
+}
+
+.chat-settings-list {
+  max-width: 40rem;
+  margin: 0 auto;
+  padding: 0 1.5rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+
+  @include respond-to($bp-settings-tablet) {
+    padding: 0 1rem 1rem;
+  }
+
+  @include respond-to($bp-mobile-sm) {
+    padding: 0 1rem 1rem;
+  }
+}
+
+.chat-settings-empty {
+  color: var(--color-text-secondary);
+  text-align: center;
+  padding: 1.5rem 1rem;
+  font-size: 14px;
+}
+
+.chat-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: border-color var(--transition), background-color var(--transition);
+  background-color: var(--color-surface);
+
+  &:hover {
+    border-color: var(--color-accent);
+    background-color: var(--color-surface-row-hover);
+  }
+
+  &.selected {
+    border-color: var(--color-accent);
+    background-color: rgba(147, 112, 219, 0.1);
+  }
+
+  .chat-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .chat-card-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--color-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .chat-card-id {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    flex-shrink: 0;
+    margin-left: 1rem;
+  }
+
+  .chat-card-users {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    align-items: center;
+    margin-top: 0.25rem;
+  }
+
+  .chat-card-users-label {
+    font-size: 11px;
+    color: var(--color-text-secondary);
+    margin-right: 0.25rem;
+  }
+
+  .chat-card-user {
+    font-size: 11px;
+    color: var(--color-text-secondary);
+    padding: 0.1rem 0.4rem;
+    border-radius: var(--radius-sm);
+    background-color: var(--color-surface-row-hover);
+  }
+
+  @include respond-to($bp-mobile-xs) {
+    padding: 0.5rem 0.75rem;
+
+    .chat-card-title {
+      font-size: 12px;
+    }
+
+    .chat-card-id {
+      font-size: 11px;
+    }
+  }
+}
+
+#chat-settings-container {
+  max-width: 40rem;
+  margin: 0 auto;
+  padding: 0 1.5rem 1.5rem;
+
+  h2 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--color-text);
+    margin-bottom: 1rem;
+    text-align: center;
+  }
+
+  @include respond-to($bp-settings-tablet) {
+    padding: 0 1rem 1rem;
+  }
+
+  @include respond-to($bp-mobile-sm) {
+    padding: 0 1rem 1rem;
+
+    h2 {
+      font-size: 14px;
+    }
+  }
+}
+
+#chat-settings-form {
+  padding: 0;
+}

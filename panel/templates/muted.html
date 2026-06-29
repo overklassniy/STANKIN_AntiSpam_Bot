@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block extra_head %}
+    <script type="module" src="{{ static_url('/static/js/main.js') }}" defer></script>
+{% endblock %}
+{% block body %}
+<div class="container">
+    <h1 id="table_header">{{ muted_users_text_table }}</h1>
+    <div class="table-responsive">
+        <table>
+            <thead>
+            <tr>
+                <th scope="col">Дата</th>
+                <th scope="col">ID пользователя</th>
+                <th scope="col">Имя пользователя</th>
+                <th scope="col">Ограничен до</th>
+                <th scope="col">Нарушение</th>
+            </tr>
+            </thead>
+            <tbody id="table-body">
+            {{ rows | safe }}
+            </tbody>
+        </table>
+    </div>
+
+    <nav class="pagination" aria-label="Пагинация">
+        {% if prev_url %}
+        <a href="{{ prev_url }}" class="pagination-link pagination-button prev" rel="prev">
+            <span class="btn-text">Предыдущая</span>
+            <span class="btn-mobile" aria-hidden="true">&lt;</span>
+        </a>
+        {% endif %}
+
+        {% for page_num in pages %}
+        <a href="/muted?page={{ page_num }}" class="pagination-link {% if page_num == current_page %}active{% endif %}" {% if page_num == current_page %}aria-current="page"{% endif %}>
+            {{ page_num }}
+        </a>
+        {% endfor %}
+
+        {% if next_url %}
+        <a href="{{ next_url }}" class="pagination-link pagination-button next" rel="next">
+            <span class="btn-text">Следующая</span>
+            <span class="btn-mobile" aria-hidden="true">&gt;</span>
+        </a>
+        {% endif %}
+    </nav>
+</div>
+{% endblock %}

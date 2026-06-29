@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#6491F0">
+    <meta name="color-scheme" content="light dark">
+    <title>500 — Внутренняя ошибка сервера</title>
+    <style>
+        @font-face {
+            font-family: "ALS Sirius Regular";
+            src: url("/static/fonts/ALS_Sirius_Regular.otf");
+            font-display: swap;
+        }
+        @font-face {
+            font-family: "ALS Sirius Bold";
+            src: url("/static/fonts/ALS_Sirius_Bold.otf");
+            font-display: swap;
+        }
+
+        :root {
+            --color-text: #333;
+            --color-text-secondary: #646464;
+            --color-primary: #6491F0;
+            --color-primary-light: #91aeec;
+            --color-accent: #9370DB;
+            --color-bg: #f0f2f5;
+            --color-surface: rgba(255, 255, 255, 0.5);
+            --color-border-light: hsla(0, 0%, 65%, 0.158);
+            --color-input-bg: rgba(145, 145, 145, 0.12);
+            --color-input-bg-hover: rgba(155, 155, 155, 0.1);
+            --color-white: #ffffff;
+            --color-shadow: rgba(0, 0, 0, 0.1);
+            --color-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --color-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+            --font-regular: "ALS Sirius Regular", -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif;
+            --font-bold: "ALS Sirius Bold", -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif;
+            --radius: 0.5rem;
+            --radius-sm: 5px;
+            --transition: 0.3s;
+        }
+
+        [data-theme="dark"] {
+            --color-text: #e0e0e0;
+            --color-text-secondary: #a0a0a0;
+            --color-primary: #7ba0f5;
+            --color-primary-light: #6491F0;
+            --color-accent: #b490e0;
+            --color-bg: #141417;
+            --color-surface: rgba(30, 30, 35, 0.6);
+            --color-border-light: hsla(0, 0%, 50%, 0.158);
+            --color-input-bg: rgba(145, 145, 145, 0.12);
+            --color-input-bg-hover: rgba(155, 155, 155, 0.1);
+            --color-white: #ffffff;
+            --color-shadow: rgba(0, 0, 0, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            overflow: hidden !important;
+        }
+
+        body {
+            font-family: var(--font-regular);
+            background-color: var(--color-bg);
+            color: var(--color-text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 1rem;
+        }
+
+        .error-page-outer {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+            margin: 0;
+            max-width: none;
+            background-color: var(--color-surface);
+            backdrop-filter: blur(5px) saturate(180%);
+            -webkit-backdrop-filter: blur(5px) saturate(180%);
+            box-shadow: none;
+            border: none;
+            border-radius: 0;
+            overflow: hidden;
+        }
+
+        .logo {
+            margin-bottom: 2rem;
+            animation: fade-in-up 0.4s ease forwards;
+        }
+
+        .logo svg {
+            width: 64px;
+            height: 72px;
+        }
+
+        .container {
+            background-color: var(--color-surface);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            box-shadow: 0 0 20px 1px var(--color-shadow);
+            border-radius: var(--radius);
+            border: 1px solid var(--color-border-light);
+            max-width: 520px;
+            width: 100%;
+            position: relative;
+            z-index: 1;
+            animation: fade-in-up 0.4s ease 0.1s forwards;
+            opacity: 0;
+        }
+
+        .center {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 3rem 2rem;
+            text-align: center;
+        }
+
+        .error-code {
+            font-family: var(--font-bold);
+            font-size: 96pt;
+            line-height: 1;
+            background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.04em;
+        }
+
+        .center h1 {
+            font-family: var(--font-bold);
+            font-size: 22pt;
+            margin-bottom: 0.75rem;
+        }
+
+        .center p {
+            color: var(--color-text-secondary);
+            font-size: 14pt;
+            margin-bottom: 2rem;
+            max-width: 420px;
+            line-height: 1.5;
+        }
+
+        .error-actions {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--radius-sm);
+            font-family: var(--font-bold);
+            font-size: 14pt;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+            transition: all var(--transition);
+            text-decoration: none;
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            background: var(--color-accent);
+            color: var(--color-white);
+        }
+
+        .btn-primary:hover {
+            color: var(--color-white);
+            box-shadow: var(--color-shadow-md);
+            transform: translateY(-1px);
+            filter: brightness(1.1);
+        }
+
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+
+        .btn-primary:focus-visible {
+            outline: 2px solid var(--color-accent);
+            outline-offset: 2px;
+        }
+
+        .btn-ghost {
+            background: var(--color-input-bg);
+            color: var(--color-text-secondary);
+        }
+
+        .btn-ghost:hover {
+            background: var(--color-input-bg-hover);
+            box-shadow: var(--color-shadow-sm);
+        }
+
+        .btn-ghost:focus-visible {
+            outline: 2px solid var(--color-primary);
+            outline-offset: 2px;
+        }
+
+        @keyframes fade-in-up {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: none;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .error-code { font-size: 64pt; }
+            .center h1 { font-size: 18pt; }
+            .center p { font-size: 12pt; }
+            .center { padding: 2rem 1.5rem; }
+        }
+    </style>
+    <script>
+        (function() {
+            var saved = localStorage.getItem('theme');
+            var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            if (saved === 'dark' || (!saved && prefersDark)) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            }
+        })();
+    </script>
+</head>
+<body>
+<div class="error-page-outer">
+    <div class="logo">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 236 266.9" aria-hidden="true">
+            <path fill="#820aaa" d="M235.8,75.3c-13.8-23.7-34.9-42.4-60.1-53.3l-37.3,86.1c6.9,3,12.6,8.1,16.4,14.6l81-47.4Z"/>
+            <path fill="#46c8a0" d="M117.1,212.8c-7.6-.8-15-2.7-22-5.8l-13.9,31.7c13.6,5.9,28.2,9,43,9v-34.6c-2.3.1-4.7,0-7.1-.3Z"/>
+            <path fill="#e16aff" d="M188.6,174.5c-4.5,8.5-10.6,16-18,22.1s-15.9,10.7-25.1,13.5c-6.9,2.1-14,3.2-21.2,3.2v53.6c23,0,45.5-6.2,65.2-18.1,19.7-11.8,35.8-28.8,46.5-49.1l-47.4-25.2Z"/>
+            <path fill="#052891" d="M155.4,156.9c-2.2,4.1-5.1,7.7-8.7,10.7-3.6,2.9-7.7,5.2-12.1,6.5-4.4,1.3-9.1,1.8-13.7,1.4-4.6-.5-9.1-1.8-13.2-4s-7.7-5.2-10.6-8.8-5.1-7.7-6.4-12.2c-1.3-4.4-1.8-9.1-1.3-13.7.5-4.6,1.9-9.1,4.1-13.1h0c-.1.2-.2.3-.3.5l-33.2-17.5c-4.3,8.2-7,17.1-8,26.2-1,9.5-.1,19.2,2.6,28.4,2.7,9.2,7.3,17.8,13.3,25.2,6.1,7.4,13.5,13.6,22,18.1,8.4,4.5,17.7,7.4,27.3,8.3,9.5.9,19.2,0,28.4-2.8s17.7-7.4,25.1-13.5c7.4-6.1,13.5-13.6,18-22.1l-33.3-17.6Z"/>
+            <path fill="#fa235a" d="M52.3,131c1.1-8.6,3.8-16.8,7.7-24.3l-30.8-16.3c-5.9,11.2-9.8,23.3-11.5,36-3.1,23.5,1.7,47.3,13.5,67.8l30.2-17.4c-8-13.9-11.2-30-9.1-45.8Z"/>
+            <path fill="#6491f0" d="M124.3,0c-25.6,0-50.7,7-72.6,20.2C29.8,33.5,11.9,52.4,0,75.1l93.1,49c3-5.7,7.5-10.4,13-13.7,5.5-3.3,11.8-5.1,18.2-5.1V0Z"/>
+        </svg>
+    </div>
+    <div class="container">
+        <div class="center">
+            <div class="error-code">500</div>
+            <h1>Внутренняя ошибка сервера</h1>
+            <p>На сервере произошла непредвиденная ошибка. Мы уже работаем над её устранением. Попробуйте обновить страницу позже.</p>
+            <div class="error-actions">
+                <button onclick="location.href='/';" class="btn btn-primary" type="button">Вернуться на главную</button>
+                <button onclick="history.back();" class="btn btn-ghost" type="button">Назад</button>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
