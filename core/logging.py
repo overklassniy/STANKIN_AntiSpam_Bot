@@ -165,6 +165,32 @@ def configure_third_party_loggers() -> None:
         lib_logger.propagate = False
 
 
+def truncate_for_log(text: str, max_length: int = 200) -> str:
+    """Обрезает текст для безопасного логирования.
+
+    Длинные сообщения укорачиваются до max_length символов с добавлением
+    информации об исходной длине, чтобы не засорять логи.
+
+    Аргументы:
+        text (str): Исходный текст.
+        max_length (int): Максимальная длина выводимого текста.
+
+    Возвращаемое значение:
+        str: Обрезанный текст с суффиксом оригинальной длины.
+    """
+    if text is None:
+        return ''
+
+    # Удаляем переносы строк и табы, чтобы не ломать формат логов
+    text = ' '.join(text.split())
+
+    original_length = len(text)
+    if original_length <= max_length:
+        return text
+
+    return f'{text[:max_length]}... [{original_length} симв. всего]'
+
+
 # Создаем логгер при импорте
 try:
     from core.config import LOGS_DIR

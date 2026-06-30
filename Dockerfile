@@ -1,4 +1,4 @@
-# Dockerfile — главный образ (ONNX Runtime + Torch CPU для safetensors/PyTorch моделей)
+# Dockerfile — главный образ (только ONNX Runtime, без Torch)
 
 # Стадия 1: сборка фронтенда
 FROM node:22-slim AS frontend-builder
@@ -28,11 +28,15 @@ ENV PATH="/opt/venv/bin:$PATH"
 
 WORKDIR /build
 
-COPY requirements.txt requirements-ml-onnx.txt requirements-ml-torch-cpu.txt ./
-RUN uv pip install --no-cache -r requirements.txt && \
-    uv pip install --no-cache "transformers<4.58.0" onnxruntime onnx && \
-    uv pip install --no-cache -r requirements-ml-torch-cpu.txt && \
-    uv pip uninstall -y pip setuptools 2>/dev/null; true
+COPY requirements-prod.txt ./
+RUN uv pip install --no-cache -r requirements-prod.txt && \
+    uv pip uninstall -y pip setuptools hf-xet 2>/dev/null; true
+
+# Очистка кеша и тестовых файлов в установленных пакетах
+RUN find /opt/venv -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null; true && \
+    find /opt/venv -type d -name "tests" -exec rm -rf {} + 2>/dev/null; true && \
+    find /opt/venv -type d -name "test" -exec rm -rf {} + 2>/dev/null; true && \
+    find /opt/venv -name "*.pyc" -delete 2>/dev/null; true
 
 # Исправляем symlink python в venv на путь Chainguard runtime
 RUN ln -sf /usr/bin/python /opt/venv/bin/python && \
