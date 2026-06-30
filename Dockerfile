@@ -42,20 +42,39 @@ RUN ln -sf /usr/bin/python /opt/venv/bin/python && \
 # Стадия 3: установка системных пакетов из dev-образа
 FROM cgr.dev/chainguard/python:latest-dev AS pkg-builder
 USER root
-RUN apk add --no-cache libgomp libstdc++-dev postgresql-client libpq
+RUN apk add --no-cache libgomp libstdc++-dev postgresql-client libpq liblz4-1
 
-# Копируем pg_dump, libpq, libgomp, libstdc++, libgcc_s и все разделяемые библиотеки
-RUN mkdir -p /rootfs/usr/bin /rootfs/usr/lib && \
-    cp /usr/bin/pg_dump /rootfs/usr/bin/pg_dump && \
-    cp /usr/lib/libpq.so* /rootfs/usr/lib/ 2>/dev/null; \
-    cp /usr/lib/libgomp.so.1 /rootfs/usr/lib/libgomp.so.1 && \
-    cp /usr/lib/libstdc++.so* /rootfs/usr/lib/ 2>/dev/null; \
-    cp /usr/lib/libgcc_s.so* /rootfs/usr/lib/ 2>/dev/null; \
-    ldd /usr/bin/pg_dump | grep '=> /' | awk '{print $3}' | sort -u | while read lib; do \
-        cp -L "$lib" /rootfs/usr/lib/; \
+# Копируем pg_dump и рекурсивно собираем все разделяемые библиотеки через readelf
+RUN <<'EOF'
+set -e
+mkdir -p /rootfs/usr/bin /rootfs/usr/lib
+cp /usr/bin/pg_dump /rootfs/usr/bin/pg_dump
+cp /usr/lib/libgomp.so.1 /rootfs/usr/lib/libgomp.so.1
+cp /usr/lib/libstdc++.so* /rootfs/usr/lib/ 2>/dev/null
+cp /usr/lib/libgcc_s.so* /rootfs/usr/lib/ 2>/dev/null
+
+queue="/usr/bin/pg_dump"
+processed=""
+while [ -n "$queue" ]; do
+    current="${queue%% *}"
+    rest="${queue#* }"
+    [ "$rest" = "$current" ] && rest=""
+    queue="$rest"
+    case "$processed" in
+        *"$current"*) continue ;;
+    esac
+    processed="$processed $current"
+    for lib in $(readelf -d "$current" 2>/dev/null | grep NEEDED | sed 's/.*\[\(.*\)\]/\1/'); do
+        found=$(find /usr/lib -name "$lib" 2>/dev/null | head -1)
+        if [ -n "$found" ]; then
+            cp -L "$found" /rootfs/usr/lib/ 2>/dev/null
+            queue="${queue:+$queue }$found"
+        fi
     done
+done
+EOF
 
-# Стадия 4: runtime на Chainguard (минимальный, без shell)
+# Стадия 4: runtime на Chainguard
 FROM cgr.dev/chainguard/python:latest AS runtime
 
 ENTRYPOINT []
