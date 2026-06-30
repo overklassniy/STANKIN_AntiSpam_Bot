@@ -1,4 +1,6 @@
 # Python 3.14+
+# Продакшн-зависимости для Docker-образа (только ONNX, без torch и transformers)
+# Для разработки использовать requirements.txt
 
 # Основные зависимости
 python-dotenv
@@ -20,13 +22,12 @@ aiohttp-socks
 asyncpg
 
 # Машинное обучение
-pandas
 scipy
 scikit-learn
 
-# NLP и трансформеры
-# Для продакшн-сборки использовать requirements-prod.txt (только ONNX, без torch)
-# Для локальной разработки с torch: uv pip install torch --index-url https://download.pytorch.org/whl/cpu
+# ONNX-инференс и токенизация (без torch и transformers)
+onnxruntime
+tokenizers
 
 # Обработка текста
 emoji

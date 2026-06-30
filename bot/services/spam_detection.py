@@ -18,8 +18,6 @@ from scipy.sparse import hstack
 from core.config import MODELS_DIR
 from core.logging import logger
 
-os.environ["TRANSFORMERS_VERBOSITY"] = "error"
-os.environ["TRANSFORMERS_NO_ADVISORY_WARNINGS"] = "1"
 os.environ["HF_HUB_DISABLE_PROGRESS_BARS"] = "1"
 
 load_dotenv()
@@ -36,8 +34,9 @@ def _get_classifier(model_path: str):
 
     Поддерживаются два формата моделей:
     - ONNX (model.onnx, model_quantized.onnx): загружается через
-      onnxruntime.InferenceSession и transformers.AutoTokenizer.
-    - PyTorch / safetensors: загружается через transformers.pipeline.
+      onnxruntime.InferenceSession и tokenizers.Tokenizer.
+    - PyTorch / safetensors: загружается через transformers.pipeline
+      (требует установки torch и transformers).
 
     Аргументы:
         model_path (str): Абсолютный путь к директории модели.
@@ -63,7 +62,7 @@ def _get_classifier(model_path: str):
     try:
         if has_onnx:
             import onnxruntime as ort
-            from transformers import AutoTokenizer
+            from tokenizers import Tokenizer
 
             # Выбираем квантизованную модель если есть, иначе обычную
             onnx_file = next(
@@ -76,7 +75,11 @@ def _get_classifier(model_path: str):
                 str(onnx_file),
                 providers=['CPUExecutionProvider'],
             )
-            tokenizer = AutoTokenizer.from_pretrained(model_path)
+
+            tokenizer_json = model_dir / 'tokenizer.json'
+            tokenizer = Tokenizer.from_file(str(tokenizer_json))
+            tokenizer.enable_truncation(max_length=512)
+            tokenizer.enable_padding(pad_id=0, pad_token='[PAD]')
 
             _classifier = {
                 'session': session,
@@ -136,19 +139,14 @@ def predict_spam(message: str, model_path: str, threshold: float = 0.5) -> Tuple
             session = classifier['session']
             tokenizer = classifier['tokenizer']
 
-            inputs = tokenizer(
-                message,
-                return_tensors='np',
-                truncation=True,
-                padding=True,
-            )
+            encoded = tokenizer.encode(message)
 
             outputs = session.run(
                 None,
                 {
-                    'input_ids': inputs['input_ids'].astype(np.int64),
-                    'attention_mask': inputs['attention_mask'].astype(np.int64),
-                    'token_type_ids': inputs['token_type_ids'].astype(np.int64),
+                    'input_ids': np.array([encoded.ids], dtype=np.int64),
+                    'attention_mask': np.array([encoded.attention_mask], dtype=np.int64),
+                    'token_type_ids': np.array([encoded.type_ids], dtype=np.int64),
                 }
             )
 

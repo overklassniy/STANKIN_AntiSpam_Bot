@@ -1,5 +1,0 @@
-# ML-зависимости: ONNX Runtime без torch и optimum
-
-transformers<4.58.0
-onnxruntime
-onnx

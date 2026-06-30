@@ -15,7 +15,7 @@ from core.repository.collected import CollectedRepository
 from bot.services.notifications import NotificationService
 from bot.keyboards import create_spam_notification_keyboard
 from core.utils import add_hours_get_timestamp
-from core.logging import logger
+from core.logging import logger, truncate_for_log
 from core.config import TESTING
 
 
@@ -203,6 +203,8 @@ class ModerationService:
             if not message_text:
                 logger.debug(f"Сообщение от {author_id} без текста — игнорируется")
                 return
+
+            logger.info(f"Текст сообщения от {author_id}: {truncate_for_log(message_text)}")
 
             # Проверяем наличие inline клавиатуры
             check_reply_markup = settings.get('CHECK_REPLY_MARKUP', True)
