@@ -12,6 +12,7 @@ from datetime import datetime
 
 from aiogram import types
 from aiogram.enums import ParseMode
+from aiogram.exceptions import TelegramBadRequest
 
 from bot.core import dp, get_bot
 from bot.keyboards import remove_button_from_keyboard
@@ -166,6 +167,21 @@ async def process_delete_message_callback(callback: types.CallbackQuery) -> None
 
         await callback.answer("Сообщение удалено!")
         logger.info(f"Сообщение {msg_id} удалено из чата {chat_id}")
+
+    except TelegramBadRequest as e:
+        if "message to delete not found" in str(e):
+            logger.warning(f"Сообщение {msg_id} в чате {chat_id} уже удалено")
+
+            original_text = getattr(callback.message, "html_text", callback.message.text)
+            new_text = original_text + '\n\n<i>Сообщение уже удалено</i>'
+
+            new_markup = remove_button_from_keyboard(callback.message.reply_markup, "delete_message")
+            await callback.message.edit_text(new_text, parse_mode=ParseMode.HTML, reply_markup=new_markup)
+
+            await callback.answer("Сообщение уже удалено!")
+        else:
+            logger.error(f"Ошибка при удалении сообщения: {e}")
+            await callback.answer("Не удалось удалить сообщение!")
 
     except Exception as e:
         logger.error(f"Ошибка при удалении сообщения: {e}")
