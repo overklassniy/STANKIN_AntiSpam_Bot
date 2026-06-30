@@ -91,6 +91,7 @@ def _get_classifier(model_path: str):
                 model=model_path,
                 tokenizer=model_path,
                 device=-1,
+                torch_dtype="float32",
             )
     except ImportError as e:
         logger.error(f"Ошибка импорта ML-зависимостей: {e}")

@@ -1,4 +1,4 @@
-# Dockerfile — главный образ (ONNX Runtime, без torch)
+# Dockerfile — главный образ (ONNX Runtime + Torch CPU для safetensors/PyTorch моделей)
 
 # Стадия 1: сборка фронтенда
 FROM node:22-slim AS frontend-builder
@@ -28,9 +28,10 @@ ENV PATH="/opt/venv/bin:$PATH"
 
 WORKDIR /build
 
-COPY requirements.txt requirements-ml-onnx.txt ./
+COPY requirements.txt requirements-ml-onnx.txt requirements-ml-torch-cpu.txt ./
 RUN uv pip install --no-cache -r requirements.txt && \
     uv pip install --no-cache "transformers<4.58.0" onnxruntime onnx && \
+    uv pip install --no-cache -r requirements-ml-torch-cpu.txt && \
     uv pip uninstall -y pip setuptools 2>/dev/null; true
 
 # Исправляем symlink python в venv на путь Chainguard runtime
@@ -41,12 +42,15 @@ RUN ln -sf /usr/bin/python /opt/venv/bin/python && \
 # Стадия 3: установка системных пакетов из dev-образа
 FROM cgr.dev/chainguard/python:latest-dev AS pkg-builder
 USER root
-RUN apk add --no-cache libgomp postgresql-client
+RUN apk add --no-cache libgomp libstdc++-dev postgresql-client libpq
 
-# Копируем pg_dump, libgomp и все разделяемые библиотеки pg_dump
+# Копируем pg_dump, libpq, libgomp, libstdc++, libgcc_s и все разделяемые библиотеки
 RUN mkdir -p /rootfs/usr/bin /rootfs/usr/lib && \
     cp /usr/bin/pg_dump /rootfs/usr/bin/pg_dump && \
+    cp /usr/lib/libpq.so* /rootfs/usr/lib/ 2>/dev/null; \
     cp /usr/lib/libgomp.so.1 /rootfs/usr/lib/libgomp.so.1 && \
+    cp /usr/lib/libstdc++.so* /rootfs/usr/lib/ 2>/dev/null; \
+    cp /usr/lib/libgcc_s.so* /rootfs/usr/lib/ 2>/dev/null; \
     ldd /usr/bin/pg_dump | grep '=> /' | awk '{print $3}' | sort -u | while read lib; do \
         cp -L "$lib" /rootfs/usr/lib/; \
     done

@@ -1,0 +1,4 @@
+# ML-зависимости: Torch CPU для загрузки safetensors/PyTorch моделей (fp16 и др.)
+
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch
