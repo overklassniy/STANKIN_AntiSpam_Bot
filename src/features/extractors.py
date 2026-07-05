@@ -104,7 +104,7 @@ def capital_ratio(text: str) -> float:
     alpha_count = sum(1 for c in text if c.isalpha())
     if alpha_count == 0:
         return 0.0
-    return sum(1 for c in text if c.isupper()) / alpha_count
+    return sum(1 for c in text if c.isupper() and c.isalpha()) / alpha_count
 
 
 def count_punctuation(text: str) -> int:

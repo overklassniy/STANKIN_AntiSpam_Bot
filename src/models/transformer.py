@@ -152,6 +152,7 @@ def get_training_args(
         fp16=fp16,
         gradient_checkpointing=gradient_checkpointing,
         disable_tqdm=False,
+        report_to="none",
         **kwargs,
     )
 

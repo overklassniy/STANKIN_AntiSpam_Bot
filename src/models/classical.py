@@ -2,7 +2,7 @@
 Модуль обучения классических ML-моделей.
 
 Содержит функции для подготовки признаков (word TF-IDF, char TF-IDF, числовые),
-обучения Logistic Regression, Naive Bayes, Random Forest, LightGBM, CatBoost
+обучения Logistic Regression, LinearSVC, SGDClassifier, Naive Bayes, LightGBM
 с балансировкой классов через class_weight, а также функцию предсказания на новых данных.
 """
 
@@ -14,22 +14,18 @@ from typing import Any
 import numpy as np
 import pandas as pd
 from scipy.sparse import hstack
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.calibration import CalibratedClassifierCV
 from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS, TfidfVectorizer
-from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import LogisticRegression, SGDClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.preprocessing import StandardScaler
+from sklearn.svm import LinearSVC
 
 try:
     from lightgbm import LGBMClassifier
 except ImportError:
     LGBMClassifier = None
-
-try:
-    from catboost import CatBoostClassifier
-except ImportError:
-    CatBoostClassifier = None
 
 import nltk
 from nltk.corpus import stopwords
@@ -148,6 +144,7 @@ def prepare_features(
         stop_words=combined_stopwords,
         min_df=2,
         sublinear_tf=True,
+        dtype=np.float32,
     )
     word_features_train = vectorizer.fit_transform(train_texts)
     word_features_test = vectorizer.transform(test_texts)
@@ -162,6 +159,7 @@ def prepare_features(
             analyzer="char_wb",
             min_df=2,
             sublinear_tf=True,
+            dtype=np.float32,
         )
         char_features_train = char_vectorizer.fit_transform(train_texts)
         char_features_test = char_vectorizer.transform(test_texts)
@@ -209,11 +207,14 @@ def train_classical_models(
     random_state: int = 42,
 ) -> dict[str, Any]:
     """
-    Обучает набор классических моделей: LR, RF, NB, LightGBM, CatBoost.
+    Обучает набор классических моделей: LR, LinearSVC, SGD, NB, LightGBM.
 
     Все модели используют class_weight='balanced' вместо SMOTE,
     так как SMOTE на разреженных TF-IDF признаках создаёт
     нерепрезентативные синтетические примеры.
+
+    LinearSVC не поддерживает predict_proba напрямую, поэтому оборачивается
+    в CalibratedClassifierCV с методом sigmoid (Platt scaling).
 
     Аргументы:
         X_train: Признаки обучающей выборки (масштабированные).
@@ -229,8 +230,17 @@ def train_classical_models(
     models["lr"] = LogisticRegression(class_weight="balanced", max_iter=2000, random_state=random_state)
     models["lr"].fit(X_train, y_train)
 
-    models["rf"] = RandomForestClassifier(class_weight="balanced", random_state=random_state, n_estimators=100)
-    models["rf"].fit(X_train, y_train)
+    svc = LinearSVC(class_weight="balanced", max_iter=2000, random_state=random_state, dual="auto")
+    models["svc"] = CalibratedClassifierCV(svc, method="sigmoid", cv=3)
+    models["svc"].fit(X_train, y_train)
+
+    models["sgd"] = SGDClassifier(
+        loss="modified_huber",
+        class_weight="balanced",
+        random_state=random_state,
+        n_jobs=-1,
+    )
+    models["sgd"].fit(X_train, y_train)
 
     models["nb"] = MultinomialNB()
     models["nb"].fit(X_train_nc, y_train)
@@ -254,17 +264,6 @@ def train_classical_models(
             category=UserWarning,
             module="sklearn.utils.validation",
         )
-
-    if CatBoostClassifier is not None:
-        models["catboost"] = CatBoostClassifier(
-            auto_class_weights="Balanced",
-            iterations=500,
-            depth=6,
-            learning_rate=0.03,
-            random_state=random_state,
-            verbose=0,
-        )
-        models["catboost"].fit(X_train, y_train)
 
     return models
 
@@ -360,10 +359,10 @@ def save_models(
 
     name_to_filename = {
         "lr": "lr_model.pkl",
-        "rf": "rf_model.pkl",
+        "svc": "svc_model.pkl",
+        "sgd": "sgd_model.pkl",
         "nb": "nb_model.pkl",
         "lgbm": "lgbm_model.pkl",
-        "catboost": "catboost_model.pkl",
     }
     for name, model in models.items():
         filename = name_to_filename.get(name, f"{name}_model.pkl")

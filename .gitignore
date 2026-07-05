@@ -29,5 +29,11 @@ catboost_info/
 # Экспорты чатов
 chat_exports/
 
+# Утилиты для сбора данных
+scripts/
+
 # Данные
 data/
+
+# Исключения
+!src/data/

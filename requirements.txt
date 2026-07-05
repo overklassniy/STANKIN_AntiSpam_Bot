@@ -21,7 +21,6 @@ datasets
 
 # Градиентный бустинг
 lightgbm
-catboost
 
 # Оптимизация гиперпараметров
 optuna
