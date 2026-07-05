@@ -59,11 +59,25 @@ class ModerationService:
                 bert_prediction, cas, lols, chatgpt, ausure.
         """
         from bot.services.spam_detection import predict_spam
+        from bot.services.text_analysis import normalize_text, preprocess_text
         from pathlib import Path
         from core.config import MODELS_DIR
+        from core.logging import truncate_for_log
 
         bert_threshold = settings.get('BERT_THRESHOLD', 0.945)
         bert_sure_threshold = settings.get('BERT_SURE_THRESHOLD', 0.98)
+
+        logger.debug(f"Текст до обработки: {truncate_for_log(message_text)}")
+
+        # Нормализация текста
+        if settings.get('NORMALIZE_TEXT', True):
+            message_text = normalize_text(message_text)
+            logger.debug(f"Текст после нормализации: {truncate_for_log(message_text)}")
+
+        # Предобработка текста
+        if settings.get('PREPROCESS_TEXT', False):
+            message_text = preprocess_text(message_text)
+            logger.debug(f"Текст после предобработки: {truncate_for_log(message_text)}")
 
         # Путь к BERT модели из настроек
         model_name = settings.get('BERT_MODEL', 'finetuned_rubert_tiny2')
@@ -134,20 +148,22 @@ class ModerationService:
         return None
 
     @staticmethod
-    async def handle_message(message: Message, bot: Bot) -> None:
+    async def handle_message(message: Message, bot: Bot, is_edited: bool = False) -> None:
         """Обрабатывает входящее сообщение: проверка на спам и модерация.
 
         Алгоритм работы:
             1. Проверить, что чат наблюдаемый.
             2. Загрузить per-chat настройки.
-            3. Проверить, является ли автор админом.
-            4. Проверить белый список.
-            5. Анализ на спам.
-            6. Если спам — удалить/замьютить, отправить уведомление.
+            3. Если это отредактированное сообщение и проверка редактирований отключена — выйти.
+            4. Проверить, является ли автор админом.
+            5. Проверить белый список.
+            6. Анализ на спам.
+            7. Если спам — удалить/замьютить, отправить уведомление.
 
         Аргументы:
             message (Message): Входящее сообщение.
             bot (Bot): Экземпляр бота.
+            is_edited (bool): True, если сообщение было отредактировано.
         """
         chat_id = message.chat.id
         author = message.from_user
@@ -165,6 +181,10 @@ class ModerationService:
 
         # Загружаем per-chat настройки
         settings = await SettingsRepository.get_all_chat_settings(chat_pk)
+
+        # Проверка отредактированных сообщений
+        if is_edited and not settings.get('CHECK_EDITED_MESSAGES', False):
+            return
 
         # Сбор сообщений (если включено)
         collect_all = settings.get('COLLECT_ALL_MESSAGES', False)

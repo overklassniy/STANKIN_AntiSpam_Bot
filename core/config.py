@@ -7,6 +7,7 @@
 """
 
 import os
+import logging
 from pathlib import Path
 from typing import Optional
 
@@ -22,6 +23,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Директория для логов (абсолютный путь)
 LOGS_DIR = str(BASE_DIR / os.getenv('LOGS_DIR', 'logs'))
+
+# Уровень логирования (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+LOG_LEVEL = getattr(logging, os.getenv('LOG_LEVEL', 'INFO').upper(), logging.INFO)
 
 # Директория с ML моделями (абсолютный путь)
 MODELS_DIR = str(BASE_DIR / os.getenv('MODELS_DIR', 'models'))
@@ -53,7 +57,7 @@ SENTRY_DSN: Optional[str] = os.getenv('SENTRY_DSN')
 TESTING = os.getenv('TESTING', 'false').lower() in ('true', '1', 'yes')
 
 # Версия приложения (используется для Sentry release)
-APP_VERSION = '3.0.0'
+APP_VERSION = '3.0.1'
 
 # ID чата для уведомлений (чат управления)
 NOTIFICATION_CHAT_ID = int(os.getenv('NOTIFICATION_CHAT_ID', '0'))
@@ -140,10 +144,13 @@ DEFAULT_SETTINGS = {
     'CHECK_LOLS': True,
     'CHECK_EMAIL_NOT_SURE': True,
     'ENABLE_CHATGPT': False,
+    'NORMALIZE_TEXT': False,
+    'PREPROCESS_TEXT': False,
 
     # Действия
     'ENABLE_DELETING': True,
     'ENABLE_AUTOMUTING': False,
+    'CHECK_EDITED_MESSAGES': True,
     'COLLECT_ALL_MESSAGES': False,
 
     # UI

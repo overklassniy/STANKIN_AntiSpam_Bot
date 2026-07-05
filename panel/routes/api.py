@@ -11,7 +11,7 @@ from fastapi.responses import JSONResponse
 
 from core.repository.spam import SpamRepository
 from core.repository.muted import MutedRepository
-from core.repository.settings import SettingsRepository
+from core.repository.settings import SettingsRepository, SYSTEM_SETTINGS
 from core.repository.chat import ChatRepository
 from core.repository.user import UserRepository
 from panel.routes.auth import require_user_api
@@ -152,6 +152,8 @@ async def login(request: Request, data: LoginIn):
         raise HTTPException(status_code=401, detail='Неверные учётные данные')
 
     request.session['user_pk'] = user['id']
+    if data.remember:
+        request.session['remember'] = True
     logger.info(f"API: пользователь '{data.username}' вошёл в систему.")
     return {'status': 'ok'}
 
@@ -464,6 +466,7 @@ async def get_chat_settings(
             chat_pk=chat_pk,
         ).model_dump()
         for key in DEFAULT_SETTINGS
+        if key not in SYSTEM_SETTINGS
     ]
 
     return {'items': items}
@@ -581,6 +584,8 @@ async def update_chat_settings(
             raise HTTPException(status_code=403, detail='Нет доступа к чату')
 
     for key, value in data.settings.items():
+        if key in SYSTEM_SETTINGS:
+            continue
         await SettingsRepository.update_chat_setting(chat_pk, key, value)
         logger.info(f"API: настройка чата {chat_pk} '{key}' обновлена: {value}")
 

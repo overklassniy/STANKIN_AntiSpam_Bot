@@ -23,3 +23,17 @@ async def handle_message(message: Message) -> None:
     """
     bot = get_bot()
     await ModerationService.handle_message(message, bot)
+
+
+@dp.edited_message(F.text | F.caption)
+async def handle_edited_message(message: Message) -> None:
+    """Обработчик отредактированных сообщений для проверки на спам.
+
+    Проверяет отредактированные сообщения, если в настройках чата включена опция CHECK_EDITED_MESSAGES.
+    В наблюдаемых чатах бот молчит — никакие сообщения не отправляются.
+
+    Аргументы:
+        message (Message): Отредактированное сообщение Telegram.
+    """
+    bot = get_bot()
+    await ModerationService.handle_message(message, bot, is_edited=True)

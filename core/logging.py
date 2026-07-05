@@ -83,11 +83,13 @@ def get_logger() -> logging.Logger:
     global _logger_instance
     if _logger_instance is None:
         try:
-            from core.config import LOGS_DIR
+            from core.config import LOGS_DIR, LOG_LEVEL
             logs_dir = LOGS_DIR
+            log_level = LOG_LEVEL
         except Exception:
             logs_dir = 'logs'
-        _logger_instance = setup_logger(logs_dir=logs_dir)
+            log_level = logging.INFO
+        _logger_instance = setup_logger(logs_dir=logs_dir, log_level=log_level)
     return _logger_instance
 
 
@@ -193,11 +195,13 @@ def truncate_for_log(text: str, max_length: int = 200) -> str:
 
 # Создаем логгер при импорте
 try:
-    from core.config import LOGS_DIR
+    from core.config import LOGS_DIR, LOG_LEVEL
     _logs_dir = LOGS_DIR
+    _log_level = LOG_LEVEL
 except Exception:
     _logs_dir = 'logs'
+    _log_level = logging.INFO
 
-logger = setup_logger(logs_dir=_logs_dir)
+logger = setup_logger(logs_dir=_logs_dir, log_level=_log_level)
 
 configure_third_party_loggers()

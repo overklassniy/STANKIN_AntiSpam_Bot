@@ -1,6 +1,6 @@
 {
   "name": "stankin-antispam-panel",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "Фронтенд веб-панели СТАНКИН Анти-Спам",
   "private": true,
   "scripts": {

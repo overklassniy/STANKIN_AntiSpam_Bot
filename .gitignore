@@ -36,3 +36,6 @@ node_modules/
 # Скомпилированные фронтенд-ассеты
 panel/static/js/
 panel/static/styles/
+
+# Вспомогательные скрипты
+scripts/

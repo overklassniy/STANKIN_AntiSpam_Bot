@@ -5,6 +5,15 @@ from typing import Any, Dict, Optional
 from core.db import get_pool
 from core.config import DEFAULT_SETTINGS
 
+# Настройки, доступные только на вкладке «Системные».
+# Не должны отображаться и сохраняться в per-chat настройках.
+SYSTEM_SETTINGS = frozenset({
+    'PER_PAGE',
+    'BACKUP_ENABLED',
+    'BACKUP_START_TIME',
+    'BACKUP_INTERVAL_HOURS',
+})
+
 SETTING_DESCRIPTIONS = {
     'BERT_MODEL': 'Используемая BERT модель из директории models',
     'BERT_THRESHOLD': 'Порог классификации BERT (0-1)',
@@ -14,8 +23,11 @@ SETTING_DESCRIPTIONS = {
     'CHECK_LOLS': 'Проверять пользователей через LOLS API',
     'CHECK_EMAIL_NOT_SURE': 'Помечать сообщения с email как NOT SURE',
     'ENABLE_CHATGPT': 'Использовать ChatGPT для анализа',
+    'NORMALIZE_TEXT': 'Нормализовать текст (юникод, невидимые символы)',
+    'PREPROCESS_TEXT': 'Предобрабатывать текст (нижний регистр, удаление пунктуации и эмодзи)',
     'ENABLE_DELETING': 'Автоматически удалять спам',
     'ENABLE_AUTOMUTING': 'Автоматически ограничивать спамеров',
+    'CHECK_EDITED_MESSAGES': 'Проверять отредактированные сообщения на спам',
     'COLLECT_ALL_MESSAGES': 'Собирать все сообщения для анализа',
     'PER_PAGE': 'Записей на странице в панели',
     'BACKUP_ENABLED': 'Включить автоматическое резервное копирование',

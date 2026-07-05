@@ -12,12 +12,13 @@ from fastapi import FastAPI, Request, Depends
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from starlette.middleware.sessions import SessionMiddleware
+from panel.middleware import RememberSessionMiddleware
 
 from scalar_fastapi import get_scalar_api_reference, Theme, AgentScalarConfig
 
 from core.config import (
     SECRET_KEY, PANEL_PORT, PERMANENT_SESSION_LIFETIME,
+    REMEMBER_COOKIE_DURATION,
     TESTING, DATABASE_URL, APP_VERSION,
 )
 from core.logging import logger
@@ -135,11 +136,12 @@ def create_app() -> FastAPI:
             },
         )
 
-    # Middleware для сессий
+    # Middleware для сессий с поддержкой «Запомнить меня»
     app.add_middleware(
-        SessionMiddleware,
+        RememberSessionMiddleware,
         secret_key=SECRET_KEY,
         max_age=PERMANENT_SESSION_LIFETIME * 60,
+        remember_max_age=REMEMBER_COOKIE_DURATION * 60,
         same_site='lax',
     )
 
@@ -173,7 +175,7 @@ def create_app() -> FastAPI:
             path (str): Путь к статическому файлу, например /static/styles/main.css.
 
         Возвращаемое значение:
-            url (str): Путь с query-параметром версии, например /static/styles/main.css?v=3.0.0.
+            url (str): Путь с query-параметром версии, например /static/styles/main.css?v=VERSION.
         """
         return f"{path}?v={APP_VERSION}"
 

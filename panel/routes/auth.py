@@ -293,6 +293,8 @@ async def login_post(
         return RedirectResponse(url='/login?error=1', status_code=303)
 
     request.session['user_pk'] = user['id']
+    if remember:
+        request.session['remember'] = True
     logger.info(f"Пользователь '{username}' вошёл в систему.")
     return RedirectResponse(url='/', status_code=303)
 

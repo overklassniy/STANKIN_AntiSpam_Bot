@@ -1,10 +1,11 @@
 """Сервис обработки текста для анализа спама.
 
-Содержит функции предобработки текста, извлечения признаков
+Содержит функции нормализации, предобработки текста, извлечения признаков
 и регулярные выражения для поиска ссылок, email, тегов.
 """
 
 import re
+import unicodedata
 from typing import List
 
 import emoji
@@ -22,6 +23,15 @@ EMAIL_PATTERN = re.compile(
 TAG_PATTERN = re.compile(r'@[a-zA-Z0-9_]+')
 MULTIPLE_SPACES_PATTERN = re.compile(r'\s{2,}')
 PUNCTUATION_PATTERN = re.compile(r'[^\w\s]')
+
+# Невидимые символы: zero-width space, zero-width joiner, zero-width non-joiner,
+# word joiner, zero-width no-break space и другие контрольные символы
+ZERO_WIDTH_CHARS = re.compile(
+    r'[\u200b\u200c\u200d\u2060\ufeff\u00ad]'
+)
+CONTROL_CHARS = re.compile(
+    r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]'
+)
 
 
 def count_emojis(text: str) -> int:
@@ -148,6 +158,28 @@ def extract_emails(text: str) -> List[str]:
         List[str]: Список найденных email-адресов.
     """
     return EMAIL_PATTERN.findall(text)
+
+
+def normalize_text(text: str) -> str:
+    """Нормализует текст перед анализом.
+
+    Алгоритм работы:
+        1. NFC-нормализация юникода.
+        2. Удаление невидимых символов (zero-width и подобных).
+        3. Удаление контрольных символов.
+        4. Нормализация пробелов.
+
+    Аргументы:
+        text (str): Исходный текст.
+
+    Возвращаемое значение:
+        result (str): Нормализованный текст.
+    """
+    text = unicodedata.normalize('NFC', text)
+    text = ZERO_WIDTH_CHARS.sub('', text)
+    text = CONTROL_CHARS.sub('', text)
+    text = re.sub(r'\s+', ' ', text).strip()
+    return text
 
 
 def preprocess_text(

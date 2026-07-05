@@ -11,7 +11,7 @@ from fastapi import APIRouter, Request, Form, Depends
 from fastapi.responses import HTMLResponse
 from starlette.responses import RedirectResponse
 
-from core.repository.settings import SettingsRepository, SETTING_DESCRIPTIONS
+from core.repository.settings import SettingsRepository, SETTING_DESCRIPTIONS, SYSTEM_SETTINGS
 from core.repository.chat import ChatRepository
 from core.repository.user import UserRepository
 from panel.routes.auth import require_user
@@ -19,9 +19,6 @@ from core.config import DEFAULT_SETTINGS, MODELS_DIR, COMPRESSED_MODELS_DIR
 from core.logging import logger
 
 router = APIRouter()
-
-# Настройки, отображаемые на вкладке «Системные»
-SYSTEM_SETTINGS = {'PER_PAGE', 'BACKUP_ENABLED', 'BACKUP_START_TIME', 'BACKUP_INTERVAL_HOURS'}
 
 
 def _get_available_bert_models() -> List[str]:
@@ -232,6 +229,9 @@ async def update_chat_settings(
 
     for key, value in form.items():
         if key in ('save',):
+            continue
+
+        if key in SYSTEM_SETTINGS:
             continue
 
         if value.lower() in ('true', 'false'):
