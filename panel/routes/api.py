@@ -11,7 +11,7 @@ from fastapi.responses import JSONResponse
 
 from core.repository.spam import SpamRepository
 from core.repository.muted import MutedRepository
-from core.repository.settings import SettingsRepository, SYSTEM_SETTINGS
+from core.repository.settings import SettingsRepository, SYSTEM_SETTINGS, GLOBAL_HIDDEN_SETTINGS
 from core.repository.chat import ChatRepository
 from core.repository.user import UserRepository
 from panel.routes.auth import require_user_api
@@ -402,6 +402,7 @@ async def get_settings(
             chat_pk=None,
         ).model_dump()
         for key in DEFAULT_SETTINGS
+        if key not in GLOBAL_HIDDEN_SETTINGS
     ]
 
     return {'items': items}
@@ -523,6 +524,8 @@ async def update_global_settings(
         raise HTTPException(status_code=403, detail='Недостаточно прав')
 
     for key, value in data.settings.items():
+        if key in GLOBAL_HIDDEN_SETTINGS:
+            continue
         await SettingsRepository.update_global(key, value)
         logger.info(f"API: глобальная настройка '{key}' обновлена: {value}")
 

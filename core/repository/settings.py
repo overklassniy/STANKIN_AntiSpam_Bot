@@ -14,6 +14,14 @@ SYSTEM_SETTINGS = frozenset({
     'BACKUP_INTERVAL_HOURS',
 })
 
+# Настройки, скрытые из глобальной панели, но доступные в per-chat.
+# Логирование в топик — per-chat-настройка: лог-топик настраивается
+# индивидуально для каждого чата и не имеет смысла глобально.
+GLOBAL_HIDDEN_SETTINGS = frozenset({
+    'LOG_TO_TOPIC',
+    'LOG_TOPIC_ID',
+})
+
 SETTING_DESCRIPTIONS = {
     'BERT_MODEL': 'Используемая BERT модель из директории models',
     'BERT_THRESHOLD': 'Порог классификации BERT (0-1)',
@@ -147,9 +155,15 @@ class SettingsRepository:
 
     @staticmethod
     async def init_default_global_settings() -> None:
-        """Инициализирует глобальные настройки по умолчанию, если их нет."""
+        """Инициализирует глобальные настройки по умолчанию, если их нет.
+
+        Настройки из GLOBAL_HIDDEN_SETTINGS пропускаются: они не имеют
+        смысла на глобальном уровне и настраиваются только per-chat.
+        """
         pool = get_pool()
         for key, value in DEFAULT_SETTINGS.items():
+            if key in GLOBAL_HIDDEN_SETTINGS:
+                continue
             value_type = _detect_type(value)
             str_value = ('true' if value else 'false') if value_type == 'bool' else str(value)
             await pool.execute(

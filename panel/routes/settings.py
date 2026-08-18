@@ -11,7 +11,7 @@ from fastapi import APIRouter, Request, Form, Depends
 from fastapi.responses import HTMLResponse
 from starlette.responses import RedirectResponse
 
-from core.repository.settings import SettingsRepository, SETTING_DESCRIPTIONS, SYSTEM_SETTINGS
+from core.repository.settings import SettingsRepository, SETTING_DESCRIPTIONS, SYSTEM_SETTINGS, GLOBAL_HIDDEN_SETTINGS
 from core.repository.chat import ChatRepository
 from core.repository.user import UserRepository
 from panel.routes.auth import require_user
@@ -93,6 +93,8 @@ async def settings_page(
     system_fields = []
     if user['is_superadmin']:
         for key in DEFAULT_SETTINGS:
+            if key in GLOBAL_HIDDEN_SETTINGS:
+                continue
             value = global_settings.get(key, DEFAULT_SETTINGS[key])
             if key == 'BERT_MODEL':
                 field_type = 'select'
@@ -172,6 +174,9 @@ async def update_global_settings(
 
     for key, value in form.items():
         if key in ('save',):
+            continue
+
+        if key in GLOBAL_HIDDEN_SETTINGS:
             continue
 
         # Определяем тип и преобразуем
