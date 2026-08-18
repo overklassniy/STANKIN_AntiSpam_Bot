@@ -58,7 +58,7 @@ def setup_logger(
 
     logger_obj.addHandler(console_handler)
 
-    ascii_art_path = Path('.info/ascii-art.txt')
+    ascii_art_path = Path('assets/ascii-art.txt')
     if ascii_art_path.exists():
         try:
             with open(ascii_art_path, 'r', encoding='utf-8') as f:
