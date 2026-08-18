@@ -3,8 +3,10 @@
 Формат callback_data включает chat_id:
 - delete_message:{chat_id}:{message_id}
 - mute_user:{chat_id}:{user_id}
+- mute_forever:{chat_id}:{user_id}
 - unmute_user:{chat_id}:{user_id}
 - not_spam:{chat_id}:{user_id}
+- unwhitelist:{chat_id}:{user_id}
 """
 
 import re
@@ -93,6 +95,82 @@ async def process_mute_user_callback(callback: types.CallbackQuery) -> None:
 
     except Exception as e:
         logger.error(f"Ошибка в обработчике mute_user: {e}")
+        await callback.answer("Ошибка при ограничении пользователя!")
+
+
+@dp.callback_query(lambda c: c.data.startswith("mute_forever"))
+async def process_mute_forever_callback(callback: types.CallbackQuery) -> None:
+    """Обрабатывает нажатие на кнопку «Ограничить пользователя (навсегда)».
+
+    Ограничивает пользователя до 2100 года и устанавливает relapse_number=999.
+
+    Аргументы:
+        callback (CallbackQuery): Callback-запрос от inline-кнопки.
+    """
+    try:
+        parts = callback.data.split(":")
+        if len(parts) != 3:
+            await callback.answer("Неверные данные!")
+            return
+
+        chat_id = int(parts[1])
+        user_id = int(parts[2])
+        bot = get_bot()
+
+        chat_pk = await ChatRepository.get_chat_pk(chat_id)
+        if chat_pk is None:
+            await callback.answer("Чат не найден!")
+            return
+
+        muted_user = await MutedRepository.get_muted_user(chat_pk, user_id)
+        username = muted_user['username'] if muted_user else None
+
+        # Проверяем, не ограничен ли уже навсегда
+        if muted_user and muted_user.get('muted_till_timestamp') is not None:
+            if muted_user['muted_till_timestamp'] >= 4102455600.0:
+                await callback.answer("Уже ограничен навсегда!")
+                return
+
+        until_timestamp = 4102455600.0
+        current_timestamp = datetime.now().timestamp()
+
+        if muted_user:
+            await MutedRepository.update_muted_user(
+                chat_pk, user_id, current_timestamp, until_timestamp, 999
+            )
+        else:
+            await MutedRepository.create_muted_user(
+                chat_pk, user_id, username, current_timestamp, until_timestamp, 999
+            )
+
+        mute_permissions = types.ChatPermissions(can_send_messages=False)
+        await bot.restrict_chat_member(
+            chat_id=chat_id,
+            user_id=user_id,
+            permissions=mute_permissions,
+            until_date=until_timestamp
+        )
+
+        until_str = datetime.fromtimestamp(until_timestamp).strftime("%d.%m.%Y %H:%M:%S")
+
+        original_text = getattr(callback.message, "html_text", callback.message.text)
+        new_text = original_text + f'\n<b>Ограничен навсегда (до {until_str})</b>'
+
+        # Удаляем кнопки mute_user и mute_forever из клавиатуры
+        new_markup = remove_button_from_keyboard(callback.message.reply_markup, "mute_user")
+        if new_markup:
+            new_markup = remove_button_from_keyboard(new_markup, "mute_forever")
+        await callback.message.edit_text(new_text, parse_mode=ParseMode.HTML, reply_markup=new_markup)
+
+        await callback.answer("Пользователь ограничен навсегда!")
+        logger.info(f"Пользователь {user_id} ограничен навсегда (relapse=999)")
+
+        await NotificationService.send_mute_notification(
+            bot, user_id, username, until_str, 999, chat_id
+        )
+
+    except Exception as e:
+        logger.error(f"Ошибка в обработчике mute_forever: {e}")
         await callback.answer("Ошибка при ограничении пользователя!")
 
 
@@ -239,3 +317,39 @@ async def process_not_spam_callback(callback: types.CallbackQuery) -> None:
     except Exception as e:
         logger.error(f"Ошибка при отметке как не спам: {e}")
         await callback.answer("Ошибка!")
+
+
+@dp.callback_query(lambda c: c.data.startswith("unwhitelist"))
+async def process_unwhitelist_callback(callback: types.CallbackQuery) -> None:
+    """Обрабатывает нажатие на кнопку «Убрать из белого списка».
+
+    Аргументы:
+        callback (CallbackQuery): Callback-запрос от inline-кнопки.
+    """
+    try:
+        parts = callback.data.split(":")
+        if len(parts) != 3:
+            await callback.answer("Неверные данные!")
+            return
+
+        chat_id = int(parts[1])
+        user_id = int(parts[2])
+
+        chat_pk = await ChatRepository.get_chat_pk(chat_id)
+        if chat_pk is None:
+            await callback.answer("Чат не найден!")
+            return
+
+        await WhitelistRepository.remove_from_whitelist(chat_pk, user_id)
+        logger.info(f"Пользователь {user_id} удалён из белого списка чата {chat_id}")
+
+        original_text = getattr(callback.message, "html_text", callback.message.text)
+        new_text = original_text + "\n\n<i>Пользователь удалён из белого списка.</i>"
+
+        new_markup = remove_button_from_keyboard(callback.message.reply_markup, "unwhitelist")
+        await callback.message.edit_text(new_text, parse_mode=ParseMode.HTML, reply_markup=new_markup)
+        await callback.answer("Пользователь удалён из белого списка!")
+
+    except Exception as e:
+        logger.error(f"Ошибка в обработчике unwhitelist: {e}")
+        await callback.answer("Ошибка при удалении из белого списка!")

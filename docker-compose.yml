@@ -5,12 +5,9 @@ services:
     container_name: stankin-antispam
     user: root
     env_file: .env
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+    network_mode: host
     volumes:
       - ./models:/app/models
       - ./logs:/app/logs
       - ./data:/app/data
-    ports:
-      - "12523:12523"
     restart: unless-stopped

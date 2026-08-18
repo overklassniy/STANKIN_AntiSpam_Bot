@@ -98,3 +98,70 @@ def format_mute_notification(
         f"<b>Дата окончания ограничения:</b> {muted_until}\n"
         f"<b>Количество нарушений:</b> {relapse_number}"
     )
+
+
+def format_log_notification(
+    timestamp: float,
+    author_id: int,
+    author_name: Optional[str],
+    message_text: str,
+    has_reply_markup: Optional[bool],
+    bert_score: Optional[float],
+    relapse_number: Optional[int],
+    is_whitelisted: bool = False,
+    content_type: Optional[str] = None,
+    chat_title: Optional[str] = None,
+    chat_id: Optional[int] = None
+) -> str:
+    """Форматирует текст логируемого сообщения для отправки в топик.
+
+    Аргументы:
+        timestamp (float): Unix timestamp.
+        author_id (int): Telegram ID автора.
+        author_name (Optional[str]): Username автора.
+        message_text (str): Текст сообщения или заглушка для нетекстовых.
+        has_reply_markup (Optional[bool]): Наличие inline-клавиатуры.
+        bert_score (Optional[float]): Оценка BERT или None если не запускался.
+        relapse_number (Optional[int]): Номер нарушения или None.
+        is_whitelisted (bool): В белом ли списке пользователь.
+        content_type (Optional[str]): Тип контента для нетекстовых сообщений.
+        chat_title (Optional[str]): Название чата.
+        chat_id (Optional[int]): ID чата.
+
+    Возвращаемое значение:
+        str: HTML-форматированный текст.
+    """
+    ts_str = datetime.fromtimestamp(timestamp).strftime("%d.%m.%Y %H:%M:%S")
+
+    if has_reply_markup is None:
+        kb_status = 'Отключено'
+    else:
+        kb_status = 'Да' if has_reply_markup else 'Нет'
+
+    text = (
+        f"<b>Дата:</b> {ts_str}\n"
+        f"<b>ID пользователя:</b> <code>{author_id}</code>\n"
+        f"<b>Имя пользователя:</b> <code>{author_name}</code>\n"
+    )
+
+    if chat_title or chat_id:
+        text += f"<b>Чат:</b> {chat_title or chat_id}\n"
+
+    if content_type:
+        text += f"<b>Тип контента:</b> {content_type}\n"
+        text += f"<b>Текст сообщения:</b>\n<blockquote>{message_text}</blockquote>\n"
+    else:
+        text += f"<b>Текст сообщения:</b>\n<blockquote>{message_text}</blockquote>\n"
+
+    text += f"<b>Имеет inline-клавиатуру:</b> {kb_status}\n"
+
+    if is_whitelisted:
+        text += "<b>Вердикт RuBert:</b> Вайтлистед\n"
+    elif bert_score is not None:
+        text += f"<b>Вердикт RuBert:</b> <code>{bert_score:.7f}</code>\n"
+    else:
+        text += "<b>Вердикт RuBert:</b> N/A\n"
+
+    text += f"<b>Количество нарушений:</b> {relapse_number if relapse_number is not None else 0}"
+
+    return text

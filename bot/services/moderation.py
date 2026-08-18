@@ -13,10 +13,11 @@ from core.repository.muted import MutedRepository
 from core.repository.whitelist import WhitelistRepository
 from core.repository.collected import CollectedRepository
 from bot.services.notifications import NotificationService
-from bot.keyboards import create_spam_notification_keyboard
+from bot.keyboards import create_spam_notification_keyboard, create_unwhitelist_keyboard
+from bot.notifications import format_log_notification
 from core.utils import add_hours_get_timestamp
 from core.logging import logger, truncate_for_log
-from core.config import TESTING
+from core.config import TESTING, SYSTEM_USER_IDS
 
 
 class ModerationService:
@@ -40,6 +41,42 @@ class ModerationService:
         except Exception as e:
             logger.warning(f"Не удалось проверить статус админа {user_id} в чате {chat_id}: {e}")
             return False
+
+    @staticmethod
+    def _get_content_type(message: Message) -> Optional[str]:
+        """Определяет тип контента нетекстового сообщения.
+
+        Аргументы:
+            message (Message): Сообщение Telegram.
+
+        Возвращаемое значение:
+            Optional[str]: Название типа контента или None.
+        """
+        if message.sticker:
+            return 'Стикер'
+        if message.photo:
+            return 'Фото'
+        if message.video:
+            return 'Видео'
+        if message.voice:
+            return 'Голосовое сообщение'
+        if message.audio:
+            return 'Аудио'
+        if message.document:
+            return 'Документ'
+        if message.animation:
+            return 'Анимация'
+        if message.video_note:
+            return 'Видеосообщение'
+        if message.dice:
+            return 'Кубик'
+        if message.location:
+            return 'Геолокация'
+        if message.contact:
+            return 'Контакт'
+        if message.poll:
+            return 'Опрос'
+        return None
 
     @staticmethod
     async def analyze_message(
@@ -186,6 +223,10 @@ class ModerationService:
         if is_edited and not settings.get('CHECK_EDITED_MESSAGES', False):
             return
 
+        # Настройки логирования в топик
+        log_to_topic = settings.get('LOG_TO_TOPIC', False)
+        log_topic_id = settings.get('LOG_TOPIC_ID', 0)
+
         # Сбор сообщений (если включено)
         collect_all = settings.get('COLLECT_ALL_MESSAGES', False)
         collect_text = message.text or message.caption
@@ -213,15 +254,101 @@ class ModerationService:
                 logger.debug(f"Сообщение от администратора {author_id} пропускается")
                 return
 
+            # Пропускаем сообщения от системных пользователей
+            if author_id in SYSTEM_USER_IDS:
+                logger.debug(f"Сообщение от системного пользователя {author_id} пропускается")
+                return
+
+            # Получаем запись об ограничениях для логирования и клавиатуры
+            muted = await MutedRepository.get_muted_user(chat_pk, author_id)
+            already_forever_muted = bool(
+                muted and muted.get('muted_till_timestamp') is not None
+                and muted['muted_till_timestamp'] >= 4102455600.0
+            )
+            current_relapse = muted['relapse_number'] if muted else 0
+
             # Проверяем белый список
-            if await WhitelistRepository.is_whitelisted(chat_pk, author_id):
+            is_whitelisted = await WhitelistRepository.is_whitelisted(chat_pk, author_id)
+            if is_whitelisted:
                 logger.debug(f"Пользователь {author_id} в белом списке чата {chat_id}")
+
+                # Логирование вайтлистед-сообщений в топик вайтлиста
+                if log_to_topic and log_topic_id > 0:
+                    log_has_reply_markup = bool(message.reply_markup)
+                    log_text = format_log_notification(
+                        timestamp=datetime.now().timestamp(),
+                        author_id=author_id,
+                        author_name=author_name,
+                        message_text=message.text or message.caption or '[Нет текста]',
+                        has_reply_markup=log_has_reply_markup,
+                        bert_score=None,
+                        relapse_number=current_relapse,
+                        is_whitelisted=True,
+                        content_type=ModerationService._get_content_type(message) if not (message.text or message.caption) else None,
+                        chat_title=message.chat.title or str(chat_id),
+                        chat_id=chat_id,
+                    )
+                    log_keyboard = create_spam_notification_keyboard(
+                        message_id=message.message_id,
+                        user_id=author_id,
+                        chat_id=chat_id,
+                        include_delete=True,
+                        include_mute=True,
+                        include_not_spam=False,
+                        include_mute_forever=not already_forever_muted,
+                    )
+                    # Добавляем кнопку unwhitelist
+                    from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+                    if log_keyboard:
+                        log_keyboard.inline_keyboard.append([
+                            InlineKeyboardButton(
+                                text="Убрать из белого списка",
+                                callback_data=f"unwhitelist:{chat_id}:{author_id}"
+                            )
+                        ])
+                    else:
+                        log_keyboard = create_unwhitelist_keyboard(author_id, chat_id)
+                    await NotificationService.send_whitelist_notification(
+                        bot, log_text, keyboard=log_keyboard
+                    )
+
                 return
 
             # Получаем текст сообщения
             message_text = message.text or message.caption
             if not message_text:
                 logger.debug(f"Сообщение от {author_id} без текста — игнорируется")
+
+                # Логирование нетекстовых сообщений
+                if log_to_topic and log_topic_id > 0:
+                    content_type = ModerationService._get_content_type(message)
+                    log_has_reply_markup = bool(message.reply_markup)
+                    log_text = format_log_notification(
+                        timestamp=datetime.now().timestamp(),
+                        author_id=author_id,
+                        author_name=author_name,
+                        message_text='[Нет текста]',
+                        has_reply_markup=log_has_reply_markup,
+                        bert_score=None,
+                        relapse_number=current_relapse,
+                        is_whitelisted=False,
+                        content_type=content_type,
+                        chat_title=message.chat.title or str(chat_id),
+                        chat_id=chat_id,
+                    )
+                    log_keyboard = create_spam_notification_keyboard(
+                        message_id=message.message_id,
+                        user_id=author_id,
+                        chat_id=chat_id,
+                        include_delete=True,
+                        include_mute=True,
+                        include_not_spam=True,
+                        include_mute_forever=not already_forever_muted,
+                    )
+                    await NotificationService.send_spam_notification(
+                        bot, log_text, keyboard=log_keyboard, thread_id=log_topic_id
+                    )
+
                 return
 
             logger.info(f"Текст сообщения от {author_id}: {truncate_for_log(message_text)}")
@@ -260,6 +387,33 @@ class ModerationService:
                     elif is_spam is True:
                         # Модель распознала как спам — помечаем NOT SURE для ручной проверки
                         not_sure = True
+
+            # Логирование всех текстовых сообщений в топик
+            if log_to_topic and log_topic_id > 0:
+                log_text = format_log_notification(
+                    timestamp=datetime.now().timestamp(),
+                    author_id=author_id,
+                    author_name=author_name,
+                    message_text=message_text,
+                    has_reply_markup=has_reply_markup,
+                    bert_score=analysis['bert_score'],
+                    relapse_number=current_relapse,
+                    is_whitelisted=False,
+                    chat_title=message.chat.title or str(chat_id),
+                    chat_id=chat_id,
+                )
+                log_keyboard = create_spam_notification_keyboard(
+                    message_id=message.message_id,
+                    user_id=author_id,
+                    chat_id=chat_id,
+                    include_delete=True,
+                    include_mute=True,
+                    include_not_spam=True,
+                    include_mute_forever=not already_forever_muted,
+                )
+                await NotificationService.send_spam_notification(
+                    bot, log_text, keyboard=log_keyboard, thread_id=log_topic_id
+                )
 
             if not is_spam:
                 logger.debug(f"Сообщение от {author_id} не является спамом")
@@ -303,8 +457,7 @@ class ModerationService:
                 except Exception as e:
                     logger.error(f"Ошибка при автоматическом удалении: {e}")
 
-            # Обработка записи о нарушениях
-            muted = await MutedRepository.get_muted_user(chat_pk, author_id)
+            # Обработка записи о нарушениях (muted получен ранее)
             if not muted:
                 relapse = 1
                 until = add_hours_get_timestamp(24) if (enable_automuting and ausure) else None
@@ -362,8 +515,21 @@ class ModerationService:
             notification_thread = NotificationService.get_spam_thread(ausure, not_sure)
 
             if enable_automuting and enable_deleting and ausure and mute_success:
+                # Кнопка «Ограничить навсегда» даже при авто-мьютинге
+                if not already_forever_muted:
+                    forever_keyboard = create_spam_notification_keyboard(
+                        message_id=message.message_id,
+                        user_id=author_id,
+                        chat_id=chat_id,
+                        include_delete=False,
+                        include_mute=False,
+                        include_not_spam=True,
+                        include_mute_forever=True,
+                    )
+                else:
+                    forever_keyboard = None
                 await NotificationService.send_spam_notification(
-                    bot, notification_text, keyboard=None, thread_id=notification_thread
+                    bot, notification_text, keyboard=forever_keyboard, thread_id=notification_thread
                 )
                 await NotificationService.send_mute_notification(
                     bot, author_id, author_name, muted_until_str, relapse, chat_id
@@ -375,7 +541,8 @@ class ModerationService:
                     chat_id=chat_id,
                     include_delete=not auto_deleted,
                     include_mute=True,
-                    include_not_spam=True
+                    include_not_spam=True,
+                    include_mute_forever=not already_forever_muted,
                 )
                 await NotificationService.send_spam_notification(
                     bot, notification_text, keyboard=keyboard, thread_id=notification_thread

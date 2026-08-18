@@ -15,6 +15,7 @@ from core.config import (
     NOTIFICATION_CHAT_94_SPAM_THREAD,
     NOTIFICATION_CHAT_NS_SPAM_THREAD,
     NOTIFICATION_CHAT_MUTED_THREAD,
+    NOTIFICATION_CHAT_WHITELIST_THREAD,
 )
 from core.logging import logger
 
@@ -129,4 +130,36 @@ class NotificationService:
             return True
         except Exception as e:
             logger.error(f"Ошибка отправки уведомления об ограничении: {e}")
+            return False
+
+    @staticmethod
+    async def send_whitelist_notification(
+        bot: Bot,
+        text: str,
+        keyboard: Optional[InlineKeyboardMarkup] = None
+    ) -> bool:
+        """Отправляет уведомление о вайтлистед-сообщении в топик вайтлиста.
+
+        Аргументы:
+            bot (Bot): Экземпляр бота.
+            text (str): Текст уведомления.
+            keyboard (Optional[InlineKeyboardMarkup]): Inline-клавиатура.
+
+        Возвращаемое значение:
+            bool: True если отправлено успешно.
+        """
+        if not NOTIFICATION_CHAT_ID:
+            return False
+
+        try:
+            await bot.send_message(
+                chat_id=NOTIFICATION_CHAT_ID,
+                text=text,
+                parse_mode='HTML',
+                reply_markup=keyboard,
+                message_thread_id=NOTIFICATION_CHAT_WHITELIST_THREAD
+            )
+            return True
+        except Exception as e:
+            logger.error(f"Ошибка отправки вайтлист-уведомления: {e}")
             return False

@@ -68,6 +68,9 @@ NOTIFICATION_CHAT_94_SPAM_THREAD = int(os.getenv('NOTIFICATION_CHAT_94_SPAM_THRE
 NOTIFICATION_CHAT_NS_SPAM_THREAD = int(os.getenv('NOTIFICATION_CHAT_NS_SPAM_THREAD', '3'))
 NOTIFICATION_CHAT_MUTED_THREAD = int(os.getenv('NOTIFICATION_CHAT_MUTED_THREAD', '4'))
 
+# ID треда для уведомлений о вайтлистед-сообщениях
+NOTIFICATION_CHAT_WHITELIST_THREAD = int(os.getenv('NOTIFICATION_CHAT_WHITELIST_THREAD', '6'))
+
 # ID треда для отправки резервных копий базы данных
 NOTIFICATION_CHAT_BACKUP_THREAD = int(os.getenv('NOTIFICATION_CHAT_BACKUP_THREAD', '5'))
 
@@ -152,6 +155,10 @@ DEFAULT_SETTINGS = {
     'ENABLE_AUTOMUTING': False,
     'CHECK_EDITED_MESSAGES': True,
     'COLLECT_ALL_MESSAGES': False,
+
+    # Логирование
+    'LOG_TO_TOPIC': False,
+    'LOG_TOPIC_ID': 0,
 
     # UI
     'PER_PAGE': 10,

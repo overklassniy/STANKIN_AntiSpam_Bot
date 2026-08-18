@@ -11,7 +11,8 @@ def create_spam_notification_keyboard(
     chat_id: int,
     include_delete: bool = True,
     include_mute: bool = True,
-    include_not_spam: bool = True
+    include_not_spam: bool = True,
+    include_mute_forever: bool = True
 ) -> Optional[InlineKeyboardMarkup]:
     """Создает клавиатуру для уведомления о спаме.
 
@@ -22,6 +23,7 @@ def create_spam_notification_keyboard(
         include_delete (bool): Включить кнопку удаления.
         include_mute (bool): Включить кнопку ограничения.
         include_not_spam (bool): Включить кнопку "Не спам".
+        include_mute_forever (bool): Включить кнопку "Ограничить навсегда".
 
     Возвращаемое значение:
         Optional[InlineKeyboardMarkup]: Клавиатура или None.
@@ -41,6 +43,14 @@ def create_spam_notification_keyboard(
             InlineKeyboardButton(
                 text="Ограничить пользователя",
                 callback_data=f"mute_user:{chat_id}:{user_id}"
+            )
+        ])
+
+    if include_mute_forever:
+        buttons.append([
+            InlineKeyboardButton(
+                text="Ограничить пользователя (навсегда)",
+                callback_data=f"mute_forever:{chat_id}:{user_id}"
             )
         ])
 
@@ -69,6 +79,24 @@ def create_unmute_keyboard(user_id: int, chat_id: int) -> InlineKeyboardMarkup:
         InlineKeyboardButton(
             text="Снять ограничение",
             callback_data=f"unmute_user:{chat_id}:{user_id}"
+        )
+    ]])
+
+
+def create_unwhitelist_keyboard(user_id: int, chat_id: int) -> InlineKeyboardMarkup:
+    """Создает клавиатуру с кнопкой удаления из белого списка.
+
+    Аргументы:
+        user_id (int): ID пользователя.
+        chat_id (int): ID чата.
+
+    Возвращаемое значение:
+        InlineKeyboardMarkup: Клавиатура.
+    """
+    return InlineKeyboardMarkup(inline_keyboard=[[
+        InlineKeyboardButton(
+            text="Убрать из белого списка",
+            callback_data=f"unwhitelist:{chat_id}:{user_id}"
         )
     ]])
 
