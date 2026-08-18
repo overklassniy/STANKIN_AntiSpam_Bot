@@ -443,15 +443,18 @@ class ModerationService:
                     chat_title=message.chat.title or str(chat_id),
                     chat_id=chat_id,
                 )
-                log_keyboard = create_spam_notification_keyboard(
-                    message_id=message.message_id,
-                    user_id=author_id,
-                    chat_id=chat_id,
-                    include_delete=True,
-                    include_mute=True,
-                    include_not_spam=True,
-                    include_mute_forever=not already_forever_muted,
-                )
+                if is_spam is True:
+                    log_keyboard = None
+                else:
+                    log_keyboard = create_spam_notification_keyboard(
+                        message_id=message.message_id,
+                        user_id=author_id,
+                        chat_id=chat_id,
+                        include_delete=True,
+                        include_mute=True,
+                        include_not_spam=True,
+                        include_mute_forever=not already_forever_muted,
+                    )
                 await NotificationService.send_spam_notification(
                     bot, log_text, keyboard=log_keyboard, thread_id=log_topic_id
                 )
