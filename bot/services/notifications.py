@@ -135,21 +135,47 @@ class NotificationService:
     @staticmethod
     async def send_whitelist_notification(
         bot: Bot,
-        text: str,
-        keyboard: Optional[InlineKeyboardMarkup] = None
+        user_id: int,
+        username: Optional[str],
+        added_by: Optional[int],
+        added_by_username: Optional[str],
+        reason: Optional[str],
+        chat_id: int,
+        chat_title: Optional[str] = None
     ) -> bool:
-        """Отправляет уведомление о вайтлистед-сообщении в топик вайтлиста.
+        """Отправляет уведомление о добавлении пользователя в белый список в топик вайтлиста.
 
         Аргументы:
             bot (Bot): Экземпляр бота.
-            text (str): Текст уведомления.
-            keyboard (Optional[InlineKeyboardMarkup]): Inline-клавиатура.
+            user_id (int): Telegram ID добавленного пользователя.
+            username (Optional[str]): Username добавленного пользователя.
+            added_by (Optional[int]): Telegram ID пользователя, который добавил.
+            added_by_username (Optional[str]): Username добавившего.
+            reason (Optional[str]): Причина добавления.
+            chat_id (int): ID чата, в котором добавлен пользователь.
+            chat_title (Optional[str]): Название чата.
 
         Возвращаемое значение:
             bool: True если отправлено успешно.
         """
         if not NOTIFICATION_CHAT_ID:
             return False
+
+        from datetime import datetime
+        from bot.notifications import format_whitelist_added_notification
+        from bot.keyboards import create_unwhitelist_keyboard
+
+        text = format_whitelist_added_notification(
+            timestamp=datetime.now().timestamp(),
+            user_id=user_id,
+            username=username,
+            added_by=added_by,
+            added_by_username=added_by_username,
+            reason=reason,
+            chat_id=chat_id,
+            chat_title=chat_title,
+        )
+        keyboard = create_unwhitelist_keyboard(user_id, chat_id)
 
         try:
             await bot.send_message(

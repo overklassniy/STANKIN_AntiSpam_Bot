@@ -100,6 +100,55 @@ def format_mute_notification(
     )
 
 
+def format_whitelist_added_notification(
+    timestamp: float,
+    user_id: int,
+    username: Optional[str],
+    added_by: Optional[int],
+    added_by_username: Optional[str],
+    reason: Optional[str],
+    chat_id: int,
+    chat_title: Optional[str] = None
+) -> str:
+    """Форматирует текст уведомления о добавлении пользователя в белый список.
+
+    Аргументы:
+        timestamp (float): Unix timestamp добавления.
+        user_id (int): Telegram ID пользователя.
+        username (Optional[str]): Username добавленного пользователя.
+        added_by (Optional[int]): Telegram ID пользователя, который добавил.
+        added_by_username (Optional[str]): Username добавившего.
+        reason (Optional[str]): Причина добавления.
+        chat_id (int): ID чата, в котором добавлен пользователь.
+        chat_title (Optional[str]): Название чата.
+
+    Возвращаемое значение:
+        str: HTML-форматированный текст уведомления.
+    """
+    ts_str = datetime.fromtimestamp(timestamp).strftime("%d.%m.%Y %H:%M:%S")
+
+    text = (
+        f"<b>Пользователь добавлен в белый список</b>\n"
+        f"<b>Дата:</b> {ts_str}\n"
+        f"<b>ID пользователя:</b> <code>{user_id}</code>\n"
+        f"<b>Имя пользователя:</b> <code>{username or 'нет'}</code>\n"
+    )
+
+    if chat_title or chat_id:
+        text += f"<b>Чат:</b> {chat_title or chat_id}\n"
+
+    if added_by is not None:
+        if added_by_username:
+            text += f"<b>Добавил:</b> <code>{added_by}</code> (@{added_by_username})\n"
+        else:
+            text += f"<b>Добавил:</b> <code>{added_by}</code>\n"
+
+    if reason:
+        text += f"<b>Причина:</b> {reason}"
+
+    return text
+
+
 def format_log_notification(
     timestamp: float,
     author_id: int,
@@ -156,8 +205,9 @@ def format_log_notification(
     text += f"<b>Имеет inline-клавиатуру:</b> {kb_status}\n"
 
     if is_whitelisted:
-        text += "<b>Вердикт RuBert:</b> Вайтлистед\n"
-    elif bert_score is not None:
+        text += "<b>Статус:</b> Вайтлистед\n"
+
+    if bert_score is not None:
         text += f"<b>Вердикт RuBert:</b> <code>{bert_score:.7f}</code>\n"
     else:
         text += "<b>Вердикт RuBert:</b> N/A\n"

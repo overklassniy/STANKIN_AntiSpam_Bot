@@ -13,7 +13,7 @@ from core.repository.muted import MutedRepository
 from core.repository.whitelist import WhitelistRepository
 from core.repository.collected import CollectedRepository
 from bot.services.notifications import NotificationService
-from bot.keyboards import create_spam_notification_keyboard, create_unwhitelist_keyboard
+from bot.keyboards import create_spam_notification_keyboard
 from bot.notifications import format_log_notification
 from core.utils import add_hours_get_timestamp
 from core.logging import logger, truncate_for_log
@@ -272,19 +272,39 @@ class ModerationService:
             if is_whitelisted:
                 logger.debug(f"Пользователь {author_id} в белом списке чата {chat_id}")
 
-                # Логирование вайтлистед-сообщений в топик вайтлиста
+                message_text = message.text or message.caption
+
+                # Whitelisted с текстом: запускаем полный анализ (BERT + внешние API),
+                # вердикт пишется в лог, но действия мьюта/удаления не применяются.
+                if message_text:
+                    try:
+                        analysis = await ModerationService.analyze_message(
+                            message_text, author_id, settings
+                        )
+                        bert_score = analysis['bert_score']
+                    except Exception as e:
+                        logger.error(f"Ошибка анализа для whitelisted {author_id}: {e}")
+                        bert_score = None
+                else:
+                    bert_score = None
+
+                # Логирование whitelisted-сообщений в лог-топик
                 if log_to_topic and log_topic_id > 0:
                     log_has_reply_markup = bool(message.reply_markup)
+                    content_type = (
+                        ModerationService._get_content_type(message)
+                        if not message_text else None
+                    )
                     log_text = format_log_notification(
                         timestamp=datetime.now().timestamp(),
                         author_id=author_id,
                         author_name=author_name,
-                        message_text=message.text or message.caption or '[Нет текста]',
+                        message_text=message_text or '[Нет текста]',
                         has_reply_markup=log_has_reply_markup,
-                        bert_score=None,
+                        bert_score=bert_score,
                         relapse_number=current_relapse,
                         is_whitelisted=True,
-                        content_type=ModerationService._get_content_type(message) if not (message.text or message.caption) else None,
+                        content_type=content_type,
                         chat_title=message.chat.title or str(chat_id),
                         chat_id=chat_id,
                     )
@@ -297,19 +317,8 @@ class ModerationService:
                         include_not_spam=False,
                         include_mute_forever=not already_forever_muted,
                     )
-                    # Добавляем кнопку unwhitelist
-                    from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
-                    if log_keyboard:
-                        log_keyboard.inline_keyboard.append([
-                            InlineKeyboardButton(
-                                text="Убрать из белого списка",
-                                callback_data=f"unwhitelist:{chat_id}:{author_id}"
-                            )
-                        ])
-                    else:
-                        log_keyboard = create_unwhitelist_keyboard(author_id, chat_id)
-                    await NotificationService.send_whitelist_notification(
-                        bot, log_text, keyboard=log_keyboard
+                    await NotificationService.send_spam_notification(
+                        bot, log_text, keyboard=log_keyboard, thread_id=log_topic_id
                     )
 
                 return
@@ -363,10 +372,42 @@ class ModerationService:
                 or message.forward_from_chat is not None
             )
 
-            # Анализируем сообщение
-            analysis = await ModerationService.analyze_message(
-                message_text, author_id, settings
-            )
+            # Анализируем сообщение.
+            # Обёрнуто в try/except: при ошибке BERT лог всё равно отправляется
+            # с bert_score=None, а обработка прерывается — нельзя принять
+            # решение о спаме без анализа.
+            try:
+                analysis = await ModerationService.analyze_message(
+                    message_text, author_id, settings
+                )
+            except Exception as e:
+                logger.error(f"Ошибка анализа сообщения от {author_id} в чате {chat_id}: {e}")
+                if log_to_topic and log_topic_id > 0:
+                    log_text = format_log_notification(
+                        timestamp=datetime.now().timestamp(),
+                        author_id=author_id,
+                        author_name=author_name,
+                        message_text=message_text,
+                        has_reply_markup=has_reply_markup,
+                        bert_score=None,
+                        relapse_number=current_relapse,
+                        is_whitelisted=False,
+                        chat_title=message.chat.title or str(chat_id),
+                        chat_id=chat_id,
+                    )
+                    log_keyboard = create_spam_notification_keyboard(
+                        message_id=message.message_id,
+                        user_id=author_id,
+                        chat_id=chat_id,
+                        include_delete=True,
+                        include_mute=True,
+                        include_not_spam=True,
+                        include_mute_forever=not already_forever_muted,
+                    )
+                    await NotificationService.send_spam_notification(
+                        bot, log_text, keyboard=log_keyboard, thread_id=log_topic_id
+                    )
+                return
 
             # Определяем статус спама
             bert_threshold = settings.get('BERT_THRESHOLD', 0.945)

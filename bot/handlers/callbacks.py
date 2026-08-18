@@ -270,7 +270,8 @@ async def process_delete_message_callback(callback: types.CallbackQuery) -> None
 async def process_not_spam_callback(callback: types.CallbackQuery) -> None:
     """Обрабатывает отметку сообщения как «не спам».
 
-    Добавляет пользователя в белый список чата.
+    Добавляет пользователя в белый список чата и отправляет уведомление
+    о добавлении в топик вайтлиста с кнопкой «Убрать из белого списка».
 
     Аргументы:
         callback (CallbackQuery): Callback-запрос от inline-кнопки.
@@ -283,6 +284,7 @@ async def process_not_spam_callback(callback: types.CallbackQuery) -> None:
     try:
         chat_id = int(parts[1])
         user_id = int(parts[2])
+        bot = get_bot()
 
         chat_pk = await ChatRepository.get_chat_pk(chat_id)
         if chat_pk is None:
@@ -305,6 +307,28 @@ async def process_not_spam_callback(callback: types.CallbackQuery) -> None:
                 reason="Отмечено как не спам через inline-кнопку"
             )
             logger.info(f"Пользователь {user_id} добавлен в белый список чата {chat_id}")
+
+            # Получаем название чата для уведомления
+            chat_title = None
+            try:
+                chat_info = await bot.get_chat(chat_id=chat_id)
+                chat_title = getattr(chat_info, 'title', None)
+            except Exception as e:
+                logger.warning(f"Не удалось получить название чата {chat_id}: {e}")
+
+            added_by_id = callback.from_user.id if callback.from_user else None
+            added_by_username = getattr(callback.from_user, 'username', None) if callback.from_user else None
+
+            await NotificationService.send_whitelist_notification(
+                bot=bot,
+                user_id=user_id,
+                username=username,
+                added_by=added_by_id,
+                added_by_username=added_by_username,
+                reason="Отмечено как не спам через inline-кнопку",
+                chat_id=chat_id,
+                chat_title=chat_title,
+            )
 
         original_text = getattr(callback.message, "html_text", callback.message.text)
         new_text = original_text + "\n\n<i>Отмечено как не спам. Пользователь добавлен в белый список.</i>"
