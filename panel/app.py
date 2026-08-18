@@ -47,6 +47,7 @@ async def lifespan(app: FastAPI):
     """
     from core.db import init_pool, close_pool, get_pool
     from core.repository.settings import SettingsRepository
+    from migrations.runner import run_migrations
 
     try:
         get_pool()
@@ -54,6 +55,8 @@ async def lifespan(app: FastAPI):
     except RuntimeError:
         logger.info("Инициализация пула PostgreSQL для панели...")
         await init_pool(DATABASE_URL)
+        # Миграции применяются до инициализации настроек по умолчанию.
+        await run_migrations(get_pool())
         await SettingsRepository.init_default_global_settings()
 
     yield

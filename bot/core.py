@@ -70,11 +70,15 @@ async def start_bot() -> None:
     global bot, bot_username
 
     # Инициализация пула PostgreSQL
-    from core.db import init_pool, close_pool
+    from core.db import init_pool, close_pool, get_pool
     from core.repository.settings import SettingsRepository
     from bot.services.chat_discovery import discover_admin_chats
+    from migrations.runner import run_migrations
 
     await init_pool(DATABASE_URL)
+    # Миграции применяются до инициализации настроек по умолчанию,
+    # чтобы устаревшие глобальные записи были удалены до их пересоздания.
+    await run_migrations(get_pool())
     await SettingsRepository.init_default_global_settings()
 
     # Импорт обработчиков для их регистрации
