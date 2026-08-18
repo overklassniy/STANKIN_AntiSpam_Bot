@@ -46,7 +46,7 @@ RUN ln -sf /usr/bin/python /opt/venv/bin/python && \
 # Стадия 3: установка системных пакетов из dev-образа
 FROM cgr.dev/chainguard/python:latest-dev AS pkg-builder
 USER root
-RUN apk add --no-cache libgomp libstdc++-dev postgresql-client libpq liblz4-1
+RUN apk add --no-cache libgomp libstdc++-dev postgresql-client libpq liblz4-1 tzdata
 
 # Копируем pg_dump и рекурсивно собираем все разделяемые библиотеки через readelf
 RUN <<'EOF'
@@ -84,17 +84,20 @@ FROM cgr.dev/chainguard/python:latest AS runtime
 ENTRYPOINT []
 COPY --from=pkg-builder /rootfs/usr/lib/ /usr/lib/
 COPY --from=pkg-builder /rootfs/usr/bin/pg_dump /usr/bin/pg_dump
+COPY --from=pkg-builder /usr/share/zoneinfo/ /usr/share/zoneinfo/
 COPY --from=deps-builder /opt/venv /opt/venv
 
 ENV PATH="/opt/venv/bin:/usr/bin:$PATH"
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
+ENV TZ=Europe/Moscow
 
 WORKDIR /app
 
 COPY core/ ./core/
 COPY bot/ ./bot/
 COPY panel/ ./panel/
+COPY migrations/ ./migrations/
 COPY run.py ./
 
 COPY --from=frontend-builder /build/panel/static/js/ ./panel/static/js/

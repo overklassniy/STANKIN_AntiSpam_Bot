@@ -5,6 +5,13 @@ services:
     container_name: stankin-antispam
     user: root
     env_file: .env
+    environment:
+      # Обход segfault onnxruntime 1.29.0 на Python 3.14 при импорте
+      # (static initialization order fiasco в POSIX telemetry, PR microsoft/onnxruntime#29880).
+      # Без этой переменной бот падает по SIGSEGV при первом BERT-инференсе.
+      ORT_DISABLE_TELEMETRY: "1"
+      # Таймзона для логов, уведомлений и логики бота (Москва, UTC+3)
+      TZ: "Europe/Moscow"
     network_mode: host
     volumes:
       - ./models:/app/models
